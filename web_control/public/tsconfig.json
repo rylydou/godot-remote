@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"module": "ES2022",
+		"removeComments": true,
+		"sourceMap": true,
+		"outDir": "dist/"
+	},
+	"include": [
+		"src/**/*"
+	],
+	"exclude": []
+}
