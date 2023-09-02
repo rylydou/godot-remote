@@ -1,11 +1,11 @@
 import { clamp_length, distance_sqr } from '../vec.js';
 export function create_joystick(client, id, options) {
-    var radius = options.radius || 80;
-    var padding = options.padding || 48;
-    var bounds_thickness = 8;
-    var line = 16;
-    var handle_radius = 48;
-    var handle_outline = 8;
+    var radius = options.radius || 4;
+    var padding = options.padding || 1;
+    var bounds_thickness = .5;
+    var line = 1;
+    var handle_radius = 3;
+    var handle_outline = .5;
     var label = options.label || '';
     var active = false;
     var pointer_id = 0;

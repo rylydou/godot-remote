@@ -11,12 +11,12 @@ export interface JoystickOptions {
 }
 
 export function create_joystick(client: Client, id: string, options?: JoystickOptions): Control {
-	const radius = options.radius || 80
-	const padding = options.padding || 48
-	const bounds_thickness = 8
-	const line = 16
-	const handle_radius = 48
-	const handle_outline = 8
+	const radius = options.radius || 4
+	const padding = options.padding || 1
+	const bounds_thickness = .5
+	const line = 1
+	const handle_radius = 3
+	const handle_outline = .5
 	const label = options.label || ''
 
 	let active = false

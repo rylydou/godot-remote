@@ -17,9 +17,16 @@ var ws_server_address: String
 @export var qr_code_texture_rect: TextureRect
 
 class Client:
+	var is_connected: bool
 	var peer_id: int
+	var sid: int
 	var username: String
-	var last_heartbeat: int
+	
+	var last_heartbeat_timestamp: int
+	var ping_sum: int
+	var pings: int
+	var last_ping: int
+	var ping_avg: int
 
 var ip_address: String
 

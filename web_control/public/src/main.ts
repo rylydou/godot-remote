@@ -4,30 +4,28 @@ import { Control } from './control.js'
 import { create_button } from './controls/button.js'
 import { create_joystick } from './controls/joystick.js'
 
-console.log('Connecting WebSocket')
-const client = create_json_client(`ws://${window.location.hostname}:8081`)
+const client = create_json_client()
 client.on_status_change = render
+client.connect(`ws://${window.location.hostname}:8081`)
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
 const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
 
-fill_canvas(canvas, () => {
-	const width = ctx.canvas.width / window.devicePixelRatio
-	const height = ctx.canvas.height / window.devicePixelRatio
+const unit = 16
+let width = 0
+let height = 0
 
-	// controls = [
-	// 	create_joystick(client, 'l', { label: 'L', radius: 80, padding: 48, center_x: width / 4, center_y: height / 2 }),
-	// 	create_button(client, 'a', { label: 'A', center_x: width / 4 * 3 + 80, center_y: height / 2 }),
-	// 	create_button(client, 'b', { label: 'B', center_x: width / 4 * 3, center_y: height / 2 + 80 }),
-	// 	create_button(client, 'x', { label: 'X', center_x: width / 4 * 3, center_y: height / 2 - 80 }),
-	// 	create_button(client, 'y', { label: 'Y', center_x: width / 4 * 3 - 80, center_y: height / 2 }),
-	// ]
+fill_canvas(canvas, () => {
+	width = ctx.canvas.width / window.devicePixelRatio / unit
+	height = ctx.canvas.height / window.devicePixelRatio / unit
 
 	controls = [
-		create_joystick(client, 'l', { label: 'L', radius: 80, padding: 48, center_x: width / 4, center_y: height / 2 }),
-		create_joystick(client, 'r', { label: 'R', radius: 64, padding: 16, center_x: width / 4 * 3 - 40, center_y: height / 2 - 40 }),
-		create_button(client, 'a', { label: 'A', center_x: width / 4 * 3 + 100, center_y: height / 2 }),
-		create_button(client, 'b', { label: 'B', center_x: width / 4 * 3, center_y: height / 2 + 100 }),
+		create_button(client, 'a', { label: 'A', center_x: width - 4, center_y: height - 9 }),
+		create_button(client, 'b', { label: 'B', center_x: width - 9, center_y: height - 4 }),
+		create_button(client, 'x', { label: 'X', center_x: width - 9, center_y: height - 4 - 10 }),
+		create_button(client, 'y', { label: 'Y', center_x: width - 4 - 10, center_y: height - 9 }),
+
+		create_joystick(client, 'l', { label: 'L', radius: 4, padding: 1, center_x: 8, center_y: height - 8 }),
 	]
 
 	render()
@@ -36,13 +34,10 @@ fill_canvas(canvas, () => {
 let controls: Control[] = []
 
 function render() {
-	const width = ctx.canvas.width / window.devicePixelRatio
-	const height = ctx.canvas.height / window.devicePixelRatio
-
 	ctx.resetTransform()
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
-	ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
+	ctx.scale(window.devicePixelRatio * unit, window.devicePixelRatio * unit)
 
 	for (const control of controls) {
 		if (control.render) {
@@ -52,14 +47,17 @@ function render() {
 		}
 	}
 
-	ctx.font = 'normal 16px sans-serif'
+	ctx.font = 'normal 1px sans-serif'
 	ctx.textAlign = 'center'
 	ctx.textBaseline = 'top'
 	ctx.fillStyle = 'white'
-	ctx.fillText(client.status, width / 2, 8, width * .9)
+	ctx.fillText(client.status, width / 2, 1, width * .9)
 }
 
 function pointer_down(x: number, y: number, id: number) {
+	x = x / unit
+	y = y / unit
+
 	for (const control of controls) {
 		if (control.down)
 			control.down(x, y, id)
@@ -74,6 +72,9 @@ function pointer_down(x: number, y: number, id: number) {
 }
 
 function pointer_move(x: number, y: number, id: number) {
+	x = x / unit
+	y = y / unit
+
 	for (const control of controls) {
 		if (control.move)
 			control.move(x, y, id)
@@ -81,7 +82,11 @@ function pointer_move(x: number, y: number, id: number) {
 
 	render()
 }
+
 function pointer_up(x: number, y: number, id: number) {
+	x = x / unit
+	y = y / unit
+
 	for (const control of controls) {
 		if (control.up)
 			control.up(x, y, id)

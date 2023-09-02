@@ -52,4 +52,4 @@ export function create_button(client, id, options) {
         }
     };
 }
-//# sourceMappingURL=button.js.map
+//# sourceMappingURL=sm_button.js.map
