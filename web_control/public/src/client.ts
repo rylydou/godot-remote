@@ -11,9 +11,20 @@ export interface Client {
 	status: string
 	on_status_change?: () => void
 
+	is_awaiting_ping: boolean
+	last_pong_timestamp: number
+	last_ping: number
+	ping_sum: number
+	ping_count: number
+	get_avg_ping: () => number
+
+	receive_ping: (sts: number) => void
+	receive_pong: (sts: number, rts: number) => void
+
+	send_ping: () => void
+	send_pong: (sts: number) => void
 	send_session: (sid: number) => void
 	send_name: (name: string) => void
-
 	send_button: (id: string, r: boolean) => void
 	send_axis: (id: string, v: number) => void
 	send_joy: (id: string, x: number, y: number) => void
@@ -31,6 +42,26 @@ export function create_client(): Client {
 		status: 'Connecting...',
 		on_status_change: () => { },
 
+		is_awaiting_ping: false,
+		last_pong_timestamp: 0,
+		last_ping: 0,
+		ping_sum: 0,
+		ping_count: 0,
+		get_avg_ping: () => client.ping_sum / client.ping_count,
+
+		receive_ping(sts: number) {
+			client.send_pong(sts)
+		},
+		receive_pong(sts: number, rts: number) {
+			let timestamp = Date.now()
+			var ping = timestamp - sts
+			client.last_ping = ping
+			client.ping_sum += ping
+			client.ping_count++
+		},
+
+		send_ping() { console.error('Undefined') },
+		send_pong(sts: number) { console.error('Undefined') },
 		send_session(sid) { console.error('Undefined') },
 		send_name(name) { console.error('Undefined') },
 		send_button(id, is_down) { console.error('Undefined') },
@@ -61,6 +92,7 @@ export function create_client(): Client {
 		client.ws.onopen = (event) => {
 			console.log('[Websocket] Opened')
 			client.status = 'Connected'
+			client.is_connected = true
 			if (client.on_status_change)
 				client.on_status_change()
 
@@ -70,6 +102,7 @@ export function create_client(): Client {
 		client.ws.onclose = (event) => {
 			console.log('[Websocket] Closed: ', { code: event.code, reason: event.reason, was_clean: event.wasClean })
 			client.status = 'Disconnected'
+			client.is_connected = false
 			if (client.on_status_change)
 				client.on_status_change()
 		}
@@ -77,6 +110,7 @@ export function create_client(): Client {
 		client.ws.onerror = (event) => {
 			console.error('[Websocket] Error: ', event)
 			client.status = 'Error: ' + event.toString()
+			client.is_connected = false
 
 			if (client.on_status_change)
 				client.on_status_change()
@@ -97,14 +131,28 @@ export function create_json_client(): Client {
 		client.ws.send(JSON.stringify(data))
 	}
 
+	client.send_ping = () => {
+		send({
+			_: 'ping',
+			sts: Date.now(),
+		})
+	}
+
+	client.send_pong = (sts) => {
+		send({
+			_: 'pong',
+			sts: sts,
+			rts: Date.now(),
+		})
+	}
 	client.send_session = (sid) => {
-		this.send({
+		send({
 			_: 'session',
-			name: sid,
+			sid: sid,
 		})
 	}
 	client.send_name = (name) => {
-		this.send({
+		send({
 			_: 'name',
 			name: name,
 		})

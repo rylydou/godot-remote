@@ -31,14 +31,23 @@ var tcp_server := TCPServer.new()
 var pending_peers: Array[PendingPeer] = []
 var peers: Dictionary
 
+func _init() -> void:
+	set_process(false)
+
 func start(port: int) -> int:
-	assert(not tcp_server.is_listening())
+	set_process(true)
+	
+	if tcp_server.is_listening():
+		stop()
+	
 	return tcp_server.listen(port)
 
 func stop():
 	tcp_server.stop()
 	pending_peers.clear()
 	peers.clear()
+	
+	set_process(false)
 
 func send(peer_id: int, message: Variant) -> int:
 	var type = typeof(message)
@@ -67,7 +76,7 @@ func get_message(peer_id: int) -> Variant:
 	var pkt = socket.get_packet()
 	if socket.was_string_packet():
 		return pkt.get_string_from_utf8()
-	return bytes_to_var(pkt)
+	return pkt
 
 func has_message(peer_id: int) -> bool:
 	assert(peers.has(peer_id))
@@ -82,10 +91,12 @@ func _create_peer() -> WebSocketPeer:
 func poll() -> void:
 	if not tcp_server.is_listening():
 		return
+	
 	while not refuse_new_connections and tcp_server.is_connection_available():
 		var conn = tcp_server.take_connection()
 		assert(conn != null)
 		pending_peers.append(PendingPeer.new(conn))
+	
 	var to_remove := []
 	for p in pending_peers:
 		if not _connect_pending(p):
@@ -97,9 +108,9 @@ func poll() -> void:
 	for r in to_remove:
 		pending_peers.erase(r)
 	to_remove.clear()
+	
 	for id in peers:
 		var p: WebSocketPeer = peers[id]
-		var packets = p.get_available_packet_count()
 		p.poll()
 		if p.get_ready_state() != WebSocketPeer.STATE_OPEN:
 			client_disconnected.emit(id)
@@ -107,6 +118,7 @@ func poll() -> void:
 			continue
 		while p.get_available_packet_count():
 			message_received.emit(id, get_message(id))
+	
 	for r in to_remove:
 		peers.erase(r)
 	to_remove.clear()
@@ -147,5 +159,11 @@ func _connect_pending(p: PendingPeer) -> bool:
 			return true # Failure.
 		return false
 
-func _process(delta):
+func close_socket(peer_id: int, code := 1000, reason := '') -> void:
+	var socket: WebSocketPeer = peers[peer_id]
+	socket.close(code, reason)
+	peers.erase(peer_id)
+	client_disconnected.emit(peer_id)
+
+func _process(_delta):
 	poll()

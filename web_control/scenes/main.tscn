@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://web_control/scripts/web_control.gd" id="1_wfs0e"]
 [ext_resource type="Script" path="res://addons/godottpd/http_server.gd" id="2_bgimu"]
-[ext_resource type="Script" path="res://web_control/scripts/websocket_server.gd" id="3_2ogd8"]
+[ext_resource type="Script" path="res://web_control/scripts/json_server.gd" id="3_r8ejs"]
 [ext_resource type="Texture2D" uid="uid://gcmq7ycfmmen" path="res://icon.svg" id="4_lbl5p"]
 
 [node name="Main" type="Node"]
@@ -23,14 +23,14 @@ theme_override_constants/margin_bottom = 16
 script = ExtResource("1_wfs0e")
 http_server = NodePath("HttpServer")
 http_public_folder = "res://web_control/public"
-ws_server = NodePath("WebSocketServer")
+ws_server = NodePath("ControllerServer")
 qr_code_texture_rect = NodePath("CenterContainer/QrCode")
 
 [node name="HttpServer" type="Node" parent="WebControl"]
 script = ExtResource("2_bgimu")
 
-[node name="WebSocketServer" type="Node" parent="WebControl"]
-script = ExtResource("3_2ogd8")
+[node name="ControllerServer" type="Node" parent="WebControl"]
+script = ExtResource("3_r8ejs")
 
 [node name="CenterContainer" type="CenterContainer" parent="WebControl"]
 layout_mode = 2

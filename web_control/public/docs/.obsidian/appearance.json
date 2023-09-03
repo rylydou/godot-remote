@@ -1,6 +1,7 @@
 {
   "accentColor": "#6bd5ef",
-  "theme": "system",
+  "theme": "obsidian",
   "baseFontSizeAction": false,
-  "nativeMenus": false
+  "nativeMenus": false,
+  "showViewHeader": true
 }

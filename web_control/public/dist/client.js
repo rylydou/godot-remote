@@ -9,6 +9,24 @@ export function create_client() {
         is_connected: false,
         status: 'Connecting...',
         on_status_change: function () { },
+        is_awaiting_ping: false,
+        last_pong_timestamp: 0,
+        last_ping: 0,
+        ping_sum: 0,
+        ping_count: 0,
+        get_avg_ping: function () { return client.ping_sum / client.ping_count; },
+        receive_ping: function (sts) {
+            client.send_pong(sts);
+        },
+        receive_pong: function (sts, rts) {
+            var timestamp = Date.now();
+            var ping = timestamp - sts;
+            client.last_ping = ping;
+            client.ping_sum += ping;
+            client.ping_count++;
+        },
+        send_ping: function () { console.error('Undefined'); },
+        send_pong: function (sts) { console.error('Undefined'); },
         send_session: function (sid) { console.error('Undefined'); },
         send_name: function (name) { console.error('Undefined'); },
         send_button: function (id, is_down) { console.error('Undefined'); },
@@ -33,6 +51,7 @@ export function create_client() {
         client.ws.onopen = function (event) {
             console.log('[Websocket] Opened');
             client.status = 'Connected';
+            client.is_connected = true;
             if (client.on_status_change)
                 client.on_status_change();
             client.send_session(client.session_id);
@@ -40,12 +59,14 @@ export function create_client() {
         client.ws.onclose = function (event) {
             console.log('[Websocket] Closed: ', { code: event.code, reason: event.reason, was_clean: event.wasClean });
             client.status = 'Disconnected';
+            client.is_connected = false;
             if (client.on_status_change)
                 client.on_status_change();
         };
         client.ws.onerror = function (event) {
             console.error('[Websocket] Error: ', event);
             client.status = 'Error: ' + event.toString();
+            client.is_connected = false;
             if (client.on_status_change)
                 client.on_status_change();
             if (client.auto_reconnect) {
@@ -56,19 +77,31 @@ export function create_client() {
     return client;
 }
 export function create_json_client() {
-    var _this = this;
     var client = create_client();
     function send(data) {
         client.ws.send(JSON.stringify(data));
     }
+    client.send_ping = function () {
+        send({
+            _: 'ping',
+            sts: Date.now()
+        });
+    };
+    client.send_pong = function (sts) {
+        send({
+            _: 'pong',
+            sts: sts,
+            rts: Date.now()
+        });
+    };
     client.send_session = function (sid) {
-        _this.send({
+        send({
             _: 'session',
-            name: sid
+            sid: sid
         });
     };
     client.send_name = function (name) {
-        _this.send({
+        send({
             _: 'name',
             name: name
         });

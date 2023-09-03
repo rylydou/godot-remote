@@ -8,6 +8,8 @@ export function create_button(client, id, options) {
     var active = false;
     var pointer_id = 0;
     function sync() {
+        if (!client.is_connected)
+            return;
         client.send_button(id, active);
     }
     return {

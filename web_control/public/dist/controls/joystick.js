@@ -14,6 +14,8 @@ export function create_joystick(client, id, options) {
     var stick_x = 0;
     var stick_y = 0;
     function sync() {
+        if (!client.is_connected)
+            return;
         client.send_joy(id, stick_x, stick_y);
     }
     return {

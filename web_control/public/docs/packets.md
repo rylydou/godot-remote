@@ -14,16 +14,17 @@
 
 ## Server to client packets 
 
-| Packet ID | Name         | JSON ID  | Arguments                               |
-| --------- | ------------ | -------- | --------------------------------------- |
-| `1`       | Ping         | `ping`   | [Send timestamp `sts: long`]            |
-| `2`       | Force sync   | `sync`   | [Input ID: `id: ref`]                   |
-| `2`       | Sync all     | `sync`   |                                         |
-| `3`       | Set layout   | `layout` | [Layout: `id: ref`]                     |
-| `4`       | Kick         | `kick`   | [Reason `reason: str`]                  |
-| `5`       | Alert        | `alert`  | [Title `title: str`] [Body `body: str`] |
-| `6`       | Banner       | `banner` | [Text `txt: str`]                       |
-| `6`       | Clear banner | `banner` |                                         |
+| Packet ID | Name         | JSON ID  | Arguments                                                     |
+| --------- | ------------ | -------- | ------------------------------------------------------------- |
+| `1`       | Ping         | `ping`   | [Send timestamp `sts: long`]                                  |
+| `1`       | Pong         | `pong`   | [Send timestamp `sts: long`] [Received timestamp `rts: long`] |
+| `2`       | Force sync   | `sync`   | [Input ID: `id: ref`]                                         |
+| `2`       | Sync all     | `sync`   |                                                               |
+| `3`       | Set layout   | `layout` | [Layout: `id: ref`]                                           |
+| `4`       | Kick         | `kick`   | [Reason `reason: str`]                                        |
+| `5`       | Alert        | `alert`  | [Title `title: str`] [Body `body: str`]                       |
+| `6`       | Banner       | `banner` | [Text `txt: str`]                                             |
+| `6`       | Clear banner | `banner` |                                                               |
 
 > 1. `ping` expects a response from the client via a `pong` packet. The `sts` is mirrored which serves as a identifier for the server.
 
@@ -31,11 +32,12 @@
 
 | Packet ID | Name           | JSON ID        | Arguments                                                     | Transfer mode |
 | --------- | -------------- | -------------- | ------------------------------------------------------------- | ------------- |
+| `1`       | Ping           | `ping`         | [Send timestamp `sts: long`]                                  | Reliable      |
 | `1`       | Pong           | `pong`         | [Send timestamp `sts: long`] [Received timestamp `rts: long`] | Reliable      |
 | `2`       | Input          | `input`        | [ID `id: ref`] _+ Any additional arguments..._                | Depends...    |
 | `3`       | Set name       | `name`         | [Name `name: str`]                                            | Reliable      |
-| `4`       | Layout changed | `layout_ready` | [Layout `id: ref`]                                            | Reliable      |
-| `5`       | Session        | `session`      | [Session ID `sid: long`]                                      | Reliable      |
+| `4`       | Session        | `session`      | [Session ID `sid: long`]                                      | Reliable      |
+| `5`       | Layout changed | `layout_ready` | [Layout `id: ref`]                                            | Reliable      |
 
 > 1. `pong` is in response to a server's `ping` packet. The `sts` is mirrored which serves as a identifier for the server.
 
@@ -45,9 +47,9 @@
 | ----------------- | --------------------------------------- | ------------- |
 | Button            | [Is down `d: bool`]                     | Reliable      |
 | Axis position     | [Value `v: fixed`]                      | Unreliable    |
-| Axis Zero         |                                         | Unreliable    |
+| Axis release      |                                         | Unreliable    |
 | Joystick position | [X-axis `x: fixed`] [Y-axis `y: fixed`] | Unreliable    |
-| Joystick zero     |                                         | Unreliable    |
+| Joystick release  |                                         | Unreliable    |
 
 > - Up is negative on the y-axis.
 > - `axis` and `joy` values have a range of `-1` (inclusive) to `+1` (inclusive)

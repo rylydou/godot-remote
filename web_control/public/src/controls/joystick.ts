@@ -27,6 +27,7 @@ export function create_joystick(client: Client, id: string, options?: JoystickOp
 	let stick_y = 0
 
 	function sync() {
+		if (!client.is_connected) return
 		client.send_joy(id, stick_x, stick_y)
 	}
 

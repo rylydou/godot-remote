@@ -21,6 +21,7 @@ export function create_button(client: Client, id: string, options?: ButtonOption
 	let pointer_id = 0
 
 	function sync() {
+		if (!client.is_connected) return
 		client.send_button(id, active)
 	}
 

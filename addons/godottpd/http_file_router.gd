@@ -61,14 +61,14 @@ func handle_get(request: HttpRequest, response: HttpResponse) -> void:
 	
 	# GDScript must be excluded, unless it is used as a preprocessor (php-like)
 	if (file_exists and not serving_path.get_extension() in ['gd'] + Array(exclude_extensions)):
-		print('[HTTP] Serving ',serving_path)
+		#print('[HTTP] Serving ',serving_path)
 		response.send_raw(
 			200,
 			_serve_file(serving_path),
 			_get_mime(serving_path.get_extension())
 			)
 	else:
-		print('[HTTP] Serving fallback')
+		#print('[HTTP] Serving fallback')
 		if fallback_page.length() > 0:
 			serving_path = path + '/' + fallback_page
 			response.send_raw(200 if index_page == fallback_page else 404, _serve_file(serving_path), _get_mime(fallback_page.get_extension()))

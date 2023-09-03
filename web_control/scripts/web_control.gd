@@ -16,18 +16,6 @@ var ws_server_address: String
 @export_group('UI References')
 @export var qr_code_texture_rect: TextureRect
 
-class Client:
-	var is_connected: bool
-	var peer_id: int
-	var sid: int
-	var username: String
-	
-	var last_heartbeat_timestamp: int
-	var ping_sum: int
-	var pings: int
-	var last_ping: int
-	var ping_avg: int
-
 var ip_address: String
 
 func _ready() -> void:
@@ -51,23 +39,9 @@ func _ready() -> void:
 	
 	start_server()
 	
-	ws_server.client_connected.connect(func(peer_id): print('[Websocket] Peer connected #',peer_id))
-	ws_server.client_disconnected.connect(func(peer_id): print('[Websocket] Peer disconnected #',peer_id))
-	ws_server.message_received.connect(func(peer_id, message): print('[Websocket] Message Received from #',peer_id,' ',message))
-	ws_server.message_received.connect(_on_message_received)
-
-func _on_message_received(peer_id: int, message: Variant) -> void:
-	if typeof(message) != TYPE_STRING: return
-	if not message.begins_with('{') or not message.ends_with('}'): return
-	var data = JSON.parse_string(message)
-	if data['_'] == 'input':
-		if data['id'] == 'l':
-			var x := float(data['x'])
-			var y := float(data['y'])
-			%Joy.position.x = x*%Joy.get_parent().size.x/2
-			%Joy.position.y = y*%Joy.get_parent().size.y/2
-			%Joy.position.x += %Joy.get_parent().size.x/2 - %Joy.size.x/2
-			%Joy.position.y += %Joy.get_parent().size.y/2 - %Joy.size.x/2
+	#ws_server.client_connected.connect(func(peer_id): print('[Websocket] Peer connected #',peer_id))
+	#ws_server.client_disconnected.connect(func(peer_id): print('[Websocket] Peer disconnected #',peer_id))
+	#ws_server.message_received.connect(func(peer_id, message): print('[Websocket] #',peer_id,': ',message))
 
 func start_server() -> void:
 	print('Stopping HTTP Server')
