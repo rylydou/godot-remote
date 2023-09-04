@@ -49,6 +49,7 @@ func stop():
 	
 	set_process(false)
 
+## positive = send to only one peer, zero = brodcast to all peers, negative = send to all but one
 func send(peer_id: int, message: Variant) -> int:
 	var type = typeof(message)
 	if peer_id <= 0:
@@ -66,7 +67,7 @@ func send(peer_id: int, message: Variant) -> int:
 	var socket = peers[peer_id]
 	if type == TYPE_STRING:
 		return socket.send_text(message)
-	return socket.send(var_to_bytes(message))
+	return socket.send(message)
 
 func get_message(peer_id: int) -> Variant:
 	assert(peers.has(peer_id))

@@ -1,5 +1,6 @@
 import { fill_canvas } from './canvas.js'
 import { create_json_client } from './client.js'
+import { UNIT_SIZE } from './consts.js'
 import { Control } from './control.js'
 import { create_button } from './controls/button.js'
 import { create_joystick } from './controls/joystick.js'
@@ -11,13 +12,12 @@ client.connect(`ws://${window.location.hostname}:8081`)
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
 const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
 
-const unit = 16
 let width = 0
 let height = 0
 
 fill_canvas(canvas, () => {
-	width = ctx.canvas.width / window.devicePixelRatio / unit
-	height = ctx.canvas.height / window.devicePixelRatio / unit
+	width = ctx.canvas.width / window.devicePixelRatio / UNIT_SIZE
+	height = ctx.canvas.height / window.devicePixelRatio / UNIT_SIZE
 
 	controls = [
 		create_button(client, 'a', { label: 'A', center_x: width - 4, center_y: height - 9 }),
@@ -37,8 +37,10 @@ function render() {
 	ctx.resetTransform()
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
-	ctx.scale(window.devicePixelRatio * unit, window.devicePixelRatio * unit)
+	ctx.scale(window.devicePixelRatio * UNIT_SIZE, window.devicePixelRatio * UNIT_SIZE)
 
+	ctx.fillStyle = 'white'
+	ctx.strokeStyle = 'white'
 	for (const control of controls) {
 		if (control.render) {
 			ctx.save()
@@ -50,13 +52,12 @@ function render() {
 	ctx.font = 'normal 1px sans-serif'
 	ctx.textAlign = 'center'
 	ctx.textBaseline = 'top'
-	ctx.fillStyle = 'white'
 	ctx.fillText(client.status, width / 2, 1, width * .9)
 }
 
 function pointer_down(x: number, y: number, id: number) {
-	x = x / unit
-	y = y / unit
+	x = x / UNIT_SIZE
+	y = y / UNIT_SIZE
 
 	for (const control of controls) {
 		if (control.down)
@@ -72,8 +73,8 @@ function pointer_down(x: number, y: number, id: number) {
 }
 
 function pointer_move(x: number, y: number, id: number) {
-	x = x / unit
-	y = y / unit
+	x = x / UNIT_SIZE
+	y = y / UNIT_SIZE
 
 	for (const control of controls) {
 		if (control.move)
@@ -84,8 +85,8 @@ function pointer_move(x: number, y: number, id: number) {
 }
 
 function pointer_up(x: number, y: number, id: number) {
-	x = x / unit
-	y = y / unit
+	x = x / UNIT_SIZE
+	y = y / UNIT_SIZE
 
 	for (const control of controls) {
 		if (control.up)
@@ -95,26 +96,18 @@ function pointer_up(x: number, y: number, id: number) {
 	render()
 }
 
-let down_pointers: number[] = []
 window.addEventListener('pointerdown', (ev) => {
 	ev.preventDefault()
-	// down_pointers.push(ev.pointerId)
-
 	pointer_down(ev.x, ev.y, ev.pointerId)
 })
 
 window.addEventListener('pointerup', (ev) => {
-	// if (down_pointers.indexOf(ev.pointerId) < 0) return
 	ev.preventDefault()
-
-	// down_pointers.splice(down_pointers.indexOf(ev.pointerId))
 	pointer_up(ev.x, ev.y, ev.pointerId)
 })
 
 window.addEventListener('pointermove', (ev) => {
-	// if (down_pointers.indexOf(ev.pointerId) < 0) return
 	ev.preventDefault()
-
 	pointer_move(ev.x, ev.y, ev.pointerId)
 })
 

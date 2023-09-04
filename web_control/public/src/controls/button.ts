@@ -52,22 +52,20 @@ export function create_button(client: Client, id: string, options?: ButtonOption
 			ctx.beginPath()
 			ctx.ellipse(0, 0, radius, radius, 0, 0, 7)
 			if (active) {
-				ctx.fillStyle = 'white'
 				ctx.fill()
 			}
 
-			ctx.strokeStyle = 'white'
 			ctx.lineWidth = outline_thickness
 			ctx.stroke()
 
-			ctx.fillStyle = 'white'
 			if (active) {
-				ctx.fillStyle = 'black'
+				ctx.globalCompositeOperation = 'destination-out'
 			}
 			ctx.font = `bold ${radius}px Bespoke Sans`
 			ctx.textAlign = 'center'
 			ctx.textBaseline = 'middle'
 			ctx.fillText(label, 0, 0)
+			ctx.globalCompositeOperation = 'source-over'
 		},
 	}
 }

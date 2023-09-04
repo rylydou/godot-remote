@@ -1,5 +1,8 @@
 # Notes
 
+1. Anything relating to json is meant to be somewhat verbose to aid with debugging. _(Different JSON IDs for `ping` and `pong` while binary uses the same ID.)_
+2. `axis` and `joy` inputs send a specific packet when released to allow for the server to interpret it as pressing in on the stick. _(If the control not moved too from `0` and released it's safe to assume the control was tapped)_
+
 ## Intended strange behaviors and justifications
 
 **Scenario**: A client a connects but it's session id is already being actively used by another client.

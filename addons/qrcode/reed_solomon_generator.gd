@@ -1,9 +1,7 @@
 extends Node
 class_name ReedSolomonGenerator
 
-
 var coefficients: Array = []
-
 
 func _init(degree: int) -> void:
 	if degree < 1 || degree > 255:
@@ -23,12 +21,11 @@ func _init(degree: int) -> void:
 
 		root = self._multiply(root, 0x02)
 
-
 func get_remainder(data: Array) -> Array:
 	var result: Array = []
 	for _i in coefficients.size():
 		result.append(0)
-
+		
 	for byte in data:
 		var factor = byte ^ result.pop_front()
 		result.append(0);

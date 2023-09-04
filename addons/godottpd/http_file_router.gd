@@ -83,7 +83,7 @@ func handle_get(request: HttpRequest, response: HttpResponse) -> void:
 func _serve_file(file_path: String) -> PackedByteArray:
 	var content: PackedByteArray = []
 	var file := FileAccess.open(file_path, FileAccess.READ)
-	var error := file.get_open_error()
+	var error := FileAccess.get_open_error()
 	if error:
 		content = ('Couldn\'t serve file, ERROR = %s' % error).to_ascii_buffer()
 	else:
@@ -132,10 +132,6 @@ func _get_mime(file_extension: String) -> String:
 			type = 'image'
 			subtype = 'vnd.microsoft.icon'
 		# Documents
-		'doc':
-			subtype = 'msword'
-		'docx':
-			subtype = 'vnd.openxmlformats-officedocument.wordprocessingml.document'
 		'7z':
 			subtype = 'x-7x-compressed'
 		'gz':
@@ -147,8 +143,6 @@ func _get_mime(file_extension: String) -> String:
 		'txt':
 			type = 'text'
 			subtype = 'plain'
-		'ppt':
-			subtype = 'vnd.ms-powerpoint'
 		# Audio
 		'midi','mp3','wav':
 			type = 'audio'

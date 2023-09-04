@@ -1,9 +1,13 @@
 class_name Client extends RefCounted
 
+signal assignment_changed(is_assigned: bool)
+
 ## The WebSocket peer id.
 var peer_id := 0
 
+## The session id the client is requesting.
 var session_id := 0
+## True if the client has been assigned to the requested controller.
 var is_assigned := false
 
 ## The last time a pong was received.

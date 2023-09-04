@@ -76,35 +76,33 @@ export function create_joystick(client: Client, id: string, options?: JoystickOp
 			ctx.beginPath()
 			ctx.ellipse(0, 0, radius + padding, radius + padding, 0, 0, 7)
 			ctx.lineWidth = bounds_thickness
-			ctx.strokeStyle = 'white'
 			ctx.stroke()
 
 			// Handle outline
 			ctx.beginPath()
 			ctx.ellipse(stick_x * radius, stick_y * radius, handle_radius + handle_outline, handle_radius + handle_outline, 0, 0, 7)
-			ctx.fillStyle = 'black'
+			ctx.globalCompositeOperation = 'destination-out'
 			ctx.fill()
+			ctx.globalCompositeOperation = 'source-over'
 
 			// Line
 			ctx.beginPath()
 			ctx.moveTo(0, 0)
 			ctx.lineTo(stick_x * radius, stick_y * radius)
-			ctx.strokeStyle = 'white'
 			ctx.lineWidth = line
 			ctx.stroke()
 
 			// Handle
 			ctx.beginPath()
 			ctx.ellipse(stick_x * radius, stick_y * radius, handle_radius, handle_radius, 0, 0, 7)
-			ctx.strokeStyle = 'black'
-			ctx.fillStyle = 'white'
 			ctx.fill()
 
-			ctx.fillStyle = 'black'
 			ctx.font = `bold ${handle_radius}px Bespoke Sans`
 			ctx.textAlign = 'center'
 			ctx.textBaseline = 'middle'
+			ctx.globalCompositeOperation = 'destination-out'
 			ctx.fillText(label, stick_x * radius, stick_y * radius)
+			ctx.globalCompositeOperation = 'source-over'
 		},
 	}
 }

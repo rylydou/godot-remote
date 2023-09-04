@@ -1,0 +1,108 @@
+[gd_scene load_steps=4 format=3 uid="uid://dd2ebbiq7mjyb"]
+
+[ext_resource type="Script" path="res://web_control/scripts/controller_viewer.gd" id="1_cd7ln"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2uujr"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 8
+border_width_top = 8
+border_width_right = 8
+border_width_bottom = 8
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 1000
+corner_radius_top_right = 1000
+corner_radius_bottom_right = 1000
+corner_radius_bottom_left = 1000
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vkm1h"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 1000
+corner_radius_top_right = 1000
+corner_radius_bottom_right = 1000
+corner_radius_bottom_left = 1000
+
+[node name="ControllerView" type="HBoxContainer" node_paths=PackedStringArray("a_btn", "b_btn", "x_btn", "y_btn", "left_stick", "left_stick_container")]
+size_flags_horizontal = 0
+size_flags_vertical = 8
+theme_override_constants/separation = 16
+script = ExtResource("1_cd7ln")
+a_btn = NodePath("VBoxContainer/A")
+b_btn = NodePath("VBoxContainer/B")
+x_btn = NodePath("VBoxContainer/X")
+y_btn = NodePath("VBoxContainer/Y")
+left_stick = NodePath("LeftStick/LeftHandle")
+left_stick_container = NodePath("LeftStick")
+
+[node name="LeftStick" type="Panel" parent="."]
+custom_minimum_size = Vector2(150, 150)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 8
+theme_override_styles/panel = SubResource("StyleBoxFlat_2uujr")
+
+[node name="LeftHandle" type="Panel" parent="LeftStick"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_vkm1h")
+
+[node name="L" type="Label" parent="LeftStick/LeftHandle"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 24
+text = "L"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="A" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "A"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="B" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "B"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="X" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "X"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Y" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "Y"
+horizontal_alignment = 1
+vertical_alignment = 1

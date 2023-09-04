@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://d3krym437dc1h"]
+[gd_scene load_steps=6 format=3 uid="uid://d3krym437dc1h"]
 
 [ext_resource type="Script" path="res://web_control/scripts/web_control.gd" id="1_wfs0e"]
 [ext_resource type="Script" path="res://addons/godottpd/http_server.gd" id="2_bgimu"]
-[ext_resource type="Script" path="res://web_control/scripts/json_server.gd" id="3_r8ejs"]
-[ext_resource type="Texture2D" uid="uid://gcmq7ycfmmen" path="res://icon.svg" id="4_lbl5p"]
+[ext_resource type="Script" path="res://web_control/scripts/controller_server.gd" id="3_y8f54"]
+[ext_resource type="Script" path="res://web_control/scripts/controller_server_viewer.gd" id="4_7ge8l"]
+[ext_resource type="PackedScene" uid="uid://dd2ebbiq7mjyb" path="res://web_control/scenes/controller_view.tscn" id="4_vsid8"]
 
 [node name="Main" type="Node"]
 
@@ -30,7 +31,7 @@ qr_code_texture_rect = NodePath("CenterContainer/QrCode")
 script = ExtResource("2_bgimu")
 
 [node name="ControllerServer" type="Node" parent="WebControl"]
-script = ExtResource("3_r8ejs")
+script = ExtResource("3_y8f54")
 
 [node name="CenterContainer" type="CenterContainer" parent="WebControl"]
 layout_mode = 2
@@ -40,40 +41,33 @@ mouse_filter = 2
 custom_minimum_size = Vector2(300, 300)
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="WebControl"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="HBoxContainer" type="HBoxContainer" parent="WebControl/VBoxContainer"]
-layout_mode = 2
-
-[node name="StartHttpButton" type="Button" parent="WebControl/VBoxContainer/HBoxContainer"]
-layout_mode = 2
-text = "Restart Server"
-
-[node name="PanelContainer" type="Panel" parent="WebControl"]
-custom_minimum_size = Vector2(300, 300)
+[node name="HBoxContainer" type="HBoxContainer" parent="WebControl"]
 layout_mode = 2
 size_flags_horizontal = 0
+size_flags_vertical = 0
+
+[node name="RestartHttpButton" type="Button" parent="WebControl/HBoxContainer"]
+layout_mode = 2
+text = "Restart HTTP Server"
+
+[node name="RestartWebsocketButton" type="Button" parent="WebControl/HBoxContainer"]
+layout_mode = 2
+text = "Restart WebSocket Server"
+
+[node name="RemoveIdleButton" type="Button" parent="WebControl/HBoxContainer"]
+layout_mode = 2
+text = "Remove idle controllers"
+
+[node name="Controller Viewer" type="HFlowContainer" parent="WebControl" node_paths=PackedStringArray("controller_server")]
+layout_mode = 2
 size_flags_vertical = 8
+mouse_filter = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 16
+script = ExtResource("4_7ge8l")
+controller_server = NodePath("../ControllerServer")
+controller_view_scene = ExtResource("4_vsid8")
 
-[node name="Joy" type="TextureRect" parent="WebControl/PanelContainer"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -32.0
-offset_top = -32.0
-offset_right = 32.0
-offset_bottom = 32.0
-grow_horizontal = 2
-grow_vertical = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-texture = ExtResource("4_lbl5p")
-expand_mode = 1
-
-[connection signal="pressed" from="WebControl/VBoxContainer/HBoxContainer/StartHttpButton" to="WebControl" method="start_server"]
+[connection signal="pressed" from="WebControl/HBoxContainer/RestartHttpButton" to="WebControl" method="start_server"]
+[connection signal="pressed" from="WebControl/HBoxContainer/RestartWebsocketButton" to="WebControl" method="start_server"]
+[connection signal="pressed" from="WebControl/HBoxContainer/RemoveIdleButton" to="WebControl" method="start_server"]
