@@ -7,16 +7,26 @@ export function create_joystick(client, id, options) {
     var handle_radius = 3;
     var handle_outline = .5;
     var label = options.label || '';
+    var number_of_angles = 4;
+    var steps_of_precision = 2;
     var active = false;
     var pointer_id = 0;
     var center_x = options.center_x || 0;
     var center_y = options.center_y || 0;
     var stick_x = 0;
     var stick_y = 0;
+    var sync_x = 0;
+    var sync_y = 0;
     function sync() {
         if (!client.is_connected)
             return;
-        client.send_joy(id, stick_x, stick_y);
+        var x = Math.round(stick_x);
+        var y = Math.round(stick_y);
+        if (x == sync_x && y == sync_y)
+            return;
+        sync_x = x;
+        sync_y = y;
+        client.api.send_input_joy(id, x || 0, y || 0);
     }
     return {
         client: client,
@@ -57,28 +67,26 @@ export function create_joystick(client, id, options) {
             ctx.beginPath();
             ctx.ellipse(0, 0, radius + padding, radius + padding, 0, 0, 7);
             ctx.lineWidth = bounds_thickness;
-            ctx.strokeStyle = 'white';
             ctx.stroke();
             ctx.beginPath();
             ctx.ellipse(stick_x * radius, stick_y * radius, handle_radius + handle_outline, handle_radius + handle_outline, 0, 0, 7);
-            ctx.fillStyle = 'black';
+            ctx.globalCompositeOperation = 'destination-out';
             ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
             ctx.beginPath();
             ctx.moveTo(0, 0);
             ctx.lineTo(stick_x * radius, stick_y * radius);
-            ctx.strokeStyle = 'white';
             ctx.lineWidth = line;
             ctx.stroke();
             ctx.beginPath();
             ctx.ellipse(stick_x * radius, stick_y * radius, handle_radius, handle_radius, 0, 0, 7);
-            ctx.strokeStyle = 'black';
-            ctx.fillStyle = 'white';
             ctx.fill();
-            ctx.fillStyle = 'black';
             ctx.font = "bold ".concat(handle_radius, "px Bespoke Sans");
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
+            ctx.globalCompositeOperation = 'destination-out';
             ctx.fillText(label, stick_x * radius, stick_y * radius);
+            ctx.globalCompositeOperation = 'source-over';
         }
     };
 }

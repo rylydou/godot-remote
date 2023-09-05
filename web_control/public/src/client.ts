@@ -1,72 +1,70 @@
+import { API, ApiConstructor } from './api.js'
 import { SESSION_STORAGE_KEY } from './consts.js'
 
 export interface Client {
+	api: API
+
+	readonly send_packet: (data: any) => void
+
 	ws: WebSocket | null
 	ws_address: string
 	auto_reconnect: boolean
-	session_id: number
-	connect: (ws_address: string) => void
-
+	readonly connect: (ws_address: string) => void
 	is_connected: boolean
 	status: string
 	on_status_change?: () => void
 
-	is_awaiting_ping: boolean
+	session_id: number
+
+	ongoing_pings: number
 	last_pong_timestamp: number
 	last_ping: number
 	ping_sum: number
 	ping_count: number
 	get_avg_ping: () => number
 
-	receive_ping: (sts: number) => void
-	receive_pong: (sts: number, rts: number) => void
-
-	send_ping: () => void
-	send_pong: (sts: number) => void
-	send_session: (sid: number) => void
-	send_name: (name: string) => void
-	send_button: (id: string, r: boolean) => void
-	send_axis: (id: string, v: number) => void
-	send_joy: (id: string, x: number, y: number) => void
+	ping_server: () => void
 }
 
-export function create_client(): Client {
+export function create_client(create_api: ApiConstructor): Client {
+
 	const client = {
+		api: create_api((data) => client.send_packet(data)),
+
+		send_packet(data) {
+			if (!client.ws) return
+			client.ws.send(data)
+		},
+
 		ws: null,
 		ws_address: '',
 		auto_reconnect: true,
-		session_id: 0,
-		connect: (ws_address) => { },
-
 		is_connected: false,
 		status: 'Connecting...',
+		connect(ws_address) {
+			if (client.ws && client.ws.readyState != 3) {
+				// TODO: WEBSOCKET ERROR CODES
+				client.ws.close(1000, 'Automatic close due to error.')
+			}
+			client.ws_address = ws_address
+			client.ws = new WebSocket(ws_address)
+			listen()
+		},
 		on_status_change: () => { },
 
-		is_awaiting_ping: false,
+		session_id: 0,
+
+		ongoing_pings: 0,
 		last_pong_timestamp: 0,
 		last_ping: 0,
 		ping_sum: 0,
 		ping_count: 0,
-		get_avg_ping: () => client.ping_sum / client.ping_count,
+		get_avg_ping: () => client.ping_sum / Math.max(client.ping_count, 1),
 
-		receive_ping(sts: number) {
-			client.send_pong(sts)
+		ping_server() {
+			client.ongoing_pings++
+			client.api.send_ping(Date.now())
 		},
-		receive_pong(sts: number, rts: number) {
-			let timestamp = Date.now()
-			var ping = timestamp - sts
-			client.last_ping = ping
-			client.ping_sum += ping
-			client.ping_count++
-		},
-
-		send_ping() { console.error('Undefined') },
-		send_pong(sts: number) { console.error('Undefined') },
-		send_session(sid) { console.error('Undefined') },
-		send_name(name) { console.error('Undefined') },
-		send_button(id, is_down) { console.error('Undefined') },
-		send_axis(id, value) { console.error('Undefined') },
-		send_joy(id, x, y) { console.error('Undefined') },
 	} as Client
 
 	// TODO: Find a better way a generating random large integers.
@@ -74,33 +72,38 @@ export function create_client(): Client {
 	client.session_id = Number(sessionStorage.getItem(SESSION_STORAGE_KEY) || new_session_id)
 	sessionStorage.setItem(SESSION_STORAGE_KEY, client.session_id.toString())
 
-	client.connect = (ws_address) => {
-		if (client.ws && client.ws.readyState != 3) {
-			// TODO: Websocket closing error codes.
-			client.ws.close(1000, 'Reconnect')
-		}
-		client.ws_address = ws_address
-		client.ws = new WebSocket(ws_address)
-		listen()
+	client.api.receive_ping = (sts) => {
+		client.api.send_pong(sts, Date.now())
+	}
+
+	client.api.receive_pong = (sts, rts) => {
+		const now = Date.now()
+		const ping = now - sts
+		client.ongoing_pings--
+		client.last_ping = ping
+		client.last_pong_timestamp = now
+		client.ping_sum += ping
+		client.ping_count++
 	}
 
 	function listen() {
 		client.ws.onmessage = (event) => {
-			console.log('[Websocket] Message: ', event.data)
+			console.debug('[WebSocket] Message: ', event.data)
+			client.api.handle_packet(event.data)
 		}
 
 		client.ws.onopen = (event) => {
-			console.log('[Websocket] Opened')
+			console.log('[WebSocket] Opened')
 			client.status = 'Connected'
 			client.is_connected = true
 			if (client.on_status_change)
 				client.on_status_change()
 
-			client.send_session(client.session_id)
+			client.api.send_session(client.session_id)
 		}
 
 		client.ws.onclose = (event) => {
-			console.log('[Websocket] Closed: ', { code: event.code, reason: event.reason, was_clean: event.wasClean })
+			console.log('[WebSocket] Closed: ', { code: event.code, reason: event.reason, was_clean: event.wasClean })
 			client.status = 'Disconnected'
 			client.is_connected = false
 			if (client.on_status_change)
@@ -108,7 +111,7 @@ export function create_client(): Client {
 		}
 
 		client.ws.onerror = (event) => {
-			console.error('[Websocket] Error: ', event)
+			console.error('[WebSocket] Error: ', event)
 			client.status = 'Error: ' + event.toString()
 			client.is_connected = false
 
@@ -119,66 +122,6 @@ export function create_client(): Client {
 				client.connect(client.ws_address)
 			}
 		}
-	}
-
-	return client
-}
-
-export function create_json_client(): Client {
-	const client = create_client()
-
-	function send(data: object) {
-		client.ws.send(JSON.stringify(data))
-	}
-
-	client.send_ping = () => {
-		send({
-			_: 'ping',
-			sts: Date.now(),
-		})
-	}
-
-	client.send_pong = (sts) => {
-		send({
-			_: 'pong',
-			sts: sts,
-			rts: Date.now(),
-		})
-	}
-	client.send_session = (sid) => {
-		send({
-			_: 'session',
-			sid: sid,
-		})
-	}
-	client.send_name = (name) => {
-		send({
-			_: 'name',
-			name: name,
-		})
-	}
-
-	client.send_button = (id, is_down) => {
-		send({
-			_: 'input',
-			id: id,
-			d: is_down,
-		})
-	}
-	client.send_axis = (id, value) => {
-		send({
-			_: 'input',
-			id: id,
-			v: Math.round(value * 100) / 100,
-		})
-	}
-	client.send_joy = (id, x, y) => {
-		send({
-			_: 'input',
-			id: id,
-			x: Math.round(x * 100) / 100,
-			y: Math.round(y * 100) / 100,
-		})
 	}
 
 	return client

@@ -1,11 +1,13 @@
 import { fill_canvas } from './canvas.js'
-import { create_json_client } from './client.js'
+import { create_client } from './client.js'
 import { UNIT_SIZE } from './consts.js'
 import { Control } from './control.js'
 import { create_button } from './controls/button.js'
 import { create_joystick } from './controls/joystick.js'
+import { json_api } from './json_api.js'
 
-const client = create_json_client()
+const api = json_api
+const client = create_client(api)
 client.on_status_change = render
 client.connect(`ws://${window.location.hostname}:8081`)
 
@@ -15,16 +17,22 @@ const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
 let width = 0
 let height = 0
 
+setInterval(() => {
+	if (client.ongoing_pings > 0) return
+	if (!client.is_connected) return
+	client.ping_server()
+}, 3000)
+
 fill_canvas(canvas, () => {
 	width = ctx.canvas.width / window.devicePixelRatio / UNIT_SIZE
 	height = ctx.canvas.height / window.devicePixelRatio / UNIT_SIZE
 
+	// TODO: LAYOUT SYSTEM
 	controls = [
 		create_button(client, 'a', { label: 'A', center_x: width - 4, center_y: height - 9 }),
 		create_button(client, 'b', { label: 'B', center_x: width - 9, center_y: height - 4 }),
 		create_button(client, 'x', { label: 'X', center_x: width - 9, center_y: height - 4 - 10 }),
 		create_button(client, 'y', { label: 'Y', center_x: width - 4 - 10, center_y: height - 9 }),
-
 		create_joystick(client, 'l', { label: 'L', radius: 4, padding: 1, center_x: 8, center_y: height - 8 }),
 	]
 
@@ -52,7 +60,12 @@ function render() {
 	ctx.font = 'normal 1px sans-serif'
 	ctx.textAlign = 'center'
 	ctx.textBaseline = 'top'
-	ctx.fillText(client.status, width / 2, 1, width * .9)
+
+	let text = client.status
+	if (client.is_connected) {
+		text = `${Math.round(client.last_ping)}ms (${Math.round(client.get_avg_ping())}ms)`
+	}
+	ctx.fillText(text, width / 2, 1, width * .9)
 }
 
 function pointer_down(x: number, y: number, id: number) {

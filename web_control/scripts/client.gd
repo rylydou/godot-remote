@@ -12,7 +12,8 @@ var is_assigned := false
 
 ## The last time a pong was received.
 var last_pong_timestamp := 0
-var is_awaiting_ping := false
+## The number of pings currenly waiting on.
+var ongoing_pings := 0
 ## The toltal numbers of pings. Used to calculate an average.
 var ping_count := 0
 ## A sum of all ping durations. Used to calculate an average.

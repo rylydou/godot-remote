@@ -10,7 +10,7 @@ export function create_button(client, id, options) {
     function sync() {
         if (!client.is_connected)
             return;
-        client.send_button(id, active);
+        client.api.send_input_btn(id, active);
     }
     return {
         client: client,
@@ -37,20 +37,18 @@ export function create_button(client, id, options) {
             ctx.beginPath();
             ctx.ellipse(0, 0, radius, radius, 0, 0, 7);
             if (active) {
-                ctx.fillStyle = 'white';
                 ctx.fill();
             }
-            ctx.strokeStyle = 'white';
             ctx.lineWidth = outline_thickness;
             ctx.stroke();
-            ctx.fillStyle = 'white';
             if (active) {
-                ctx.fillStyle = 'black';
+                ctx.globalCompositeOperation = 'destination-out';
             }
             ctx.font = "bold ".concat(radius, "px Bespoke Sans");
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(label, 0, 0);
+            ctx.globalCompositeOperation = 'source-over';
         }
     };
 }

@@ -19,16 +19,27 @@ export function create_joystick(client: Client, id: string, options?: JoystickOp
 	const handle_outline = .5
 	const label = options.label || ''
 
+	const number_of_angles = 4
+	const steps_of_precision = 2
+
 	let active = false
 	let pointer_id = 0
 	let center_x = options.center_x || 0
 	let center_y = options.center_y || 0
 	let stick_x = 0
 	let stick_y = 0
+	let sync_x = 0
+	let sync_y = 0
 
+	// Implement number_of_angles and steps_of_precision
 	function sync() {
 		if (!client.is_connected) return
-		client.send_joy(id, stick_x, stick_y)
+		let x = Math.round(stick_x)
+		let y = Math.round(stick_y)
+		if (x == sync_x && y == sync_y) return
+		sync_x = x
+		sync_y = y
+		client.api.send_input_joy(id, x || 0, y || 0)
 	}
 
 	return {

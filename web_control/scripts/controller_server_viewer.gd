@@ -15,6 +15,7 @@ func _on_controller_added(session_id: int) -> void:
 	controller_view.session_id = session_id
 	controller_view.controller_server = controller_server
 	add_child(controller_view)
+	active_viewers[session_id] = controller_view
 
 func _on_controller_removed(session_id: int) -> void:
 	var controller_view: ControllerViewer = active_viewers[session_id]

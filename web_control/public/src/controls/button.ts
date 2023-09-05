@@ -22,7 +22,7 @@ export function create_button(client: Client, id: string, options?: ButtonOption
 
 	function sync() {
 		if (!client.is_connected) return
-		client.send_button(id, active)
+		client.api.send_input_btn(id, active)
 	}
 
 	return {

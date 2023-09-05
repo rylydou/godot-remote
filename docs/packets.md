@@ -22,9 +22,8 @@
 | Force sync   | `sync`         | `2` | [Input ID: `id: ref`]                                        |
 | Sync all     | `sync_all`     | ... |                                                              |
 | Set layout   | `layout`       | `3` | [Layout: `id: ref`]                                          |
-| Kick         | `kick`         | `4` | [Reason `reason: str`]                                       |
-| Alert        | `alert`        | `5` | [Title `title: str`] [Body `body: str`]                      |
-| Banner       | `banner`       | `6` | [Text `txt: str`]                                            |
+| Alert        | `alert`        | `4` | [Title `title: str`] [Body `body: str`]                      |
+| Banner       | `banner`       | `5` | [Text `txt: str`]                                            |
 | Clear banner | `clear_banner` | ... |                                                              |
 
 > 1. `ping` expects a response from the client via a `pong` packet. The `sts` is mirrored which serves as a identifier for the server.
@@ -46,13 +45,13 @@
 
 ### Inputs
 
-| Type   | Description      | Additional arguments                    | Transfer mode |
-| ------ | ---------------- | --------------------------------------- | ------------- |
-| `btn`  | State change     | [Is down `d: bool`]                     | Reliable      |
-| `axis` | Value change     | [Value `v: fixed`]                      | Unreliable    |
-| ...    | Release and zero |                                         | Reliable      |
-| `joy`  | Position change  | [X-axis `x: fixed`] [Y-axis `y: fixed`] | Unreliable    |
-| ...    | Release and zero |                                         | Reliable      |
+| Type      | Description      | Additional arguments                    | Transfer mode |
+| --------- | ---------------- | --------------------------------------- | ------------- |
+| `btn`     | State change     | [Is down `d: bool`]                     | Reliable      |
+| `axis`    | Value change     | [Value `v: fixed`]                      | Unreliable    |
+| ...`zero` | Release and zero |                                         | Reliable      |
+| `joy`     | Position change  | [X-axis `x: fixed`] [Y-axis `y: fixed`] | Unreliable    |
+| ...`zero` | Release and zero |                                         | Reliable      |
 
 > - Up is negative on the y-axis.
-> - `axis` and `joy` values have a range of `-1` (inclusive) to `+1` (inclusive)
+> - `axis` and `joy` values have a range of `-1` (inclusive) to `+1` (inclusive).

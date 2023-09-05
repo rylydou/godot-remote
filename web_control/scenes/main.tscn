@@ -68,6 +68,6 @@ script = ExtResource("4_7ge8l")
 controller_server = NodePath("../ControllerServer")
 controller_view_scene = ExtResource("4_vsid8")
 
-[connection signal="pressed" from="WebControl/HBoxContainer/RestartHttpButton" to="WebControl" method="start_server"]
-[connection signal="pressed" from="WebControl/HBoxContainer/RestartWebsocketButton" to="WebControl" method="start_server"]
-[connection signal="pressed" from="WebControl/HBoxContainer/RemoveIdleButton" to="WebControl" method="start_server"]
+[connection signal="pressed" from="WebControl/HBoxContainer/RestartHttpButton" to="WebControl" method="restart_http_server"]
+[connection signal="pressed" from="WebControl/HBoxContainer/RestartWebsocketButton" to="WebControl" method="restart_ws_server"]
+[connection signal="pressed" from="WebControl/HBoxContainer/RemoveIdleButton" to="WebControl/ControllerServer" method="remove_idle_controllers"]
