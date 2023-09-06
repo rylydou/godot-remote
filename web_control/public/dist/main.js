@@ -1,6 +1,6 @@
 import { fill_canvas } from './canvas.js';
 import { create_client } from './client.js';
-import { UNIT_SIZE } from './consts.js';
+import { AUTO_SYNC_RATE, UNIT_SIZE } from './consts.js';
 import { create_button } from './controls/button.js';
 import { create_joystick } from './controls/joystick.js';
 import { json_api } from './json_api.js';
@@ -19,6 +19,14 @@ setInterval(function () {
         return;
     client.ping_server();
 }, 3000);
+setInterval(function () {
+    for (var _i = 0, controls_1 = controls; _i < controls_1.length; _i++) {
+        var control = controls_1[_i];
+        if (control.auto_sync) {
+            control.auto_sync();
+        }
+    }
+}, 1000 / AUTO_SYNC_RATE);
 fill_canvas(canvas, function () {
     width = ctx.canvas.width / window.devicePixelRatio / UNIT_SIZE;
     height = ctx.canvas.height / window.devicePixelRatio / UNIT_SIZE;
@@ -38,8 +46,8 @@ function render() {
     ctx.scale(window.devicePixelRatio * UNIT_SIZE, window.devicePixelRatio * UNIT_SIZE);
     ctx.fillStyle = 'white';
     ctx.strokeStyle = 'white';
-    for (var _i = 0, controls_1 = controls; _i < controls_1.length; _i++) {
-        var control = controls_1[_i];
+    for (var _i = 0, controls_2 = controls; _i < controls_2.length; _i++) {
+        var control = controls_2[_i];
         if (control.render) {
             ctx.save();
             control.render(ctx);
@@ -58,13 +66,13 @@ function render() {
 function pointer_down(x, y, id) {
     x = x / UNIT_SIZE;
     y = y / UNIT_SIZE;
-    for (var _i = 0, controls_2 = controls; _i < controls_2.length; _i++) {
-        var control = controls_2[_i];
+    for (var _i = 0, controls_3 = controls; _i < controls_3.length; _i++) {
+        var control = controls_3[_i];
         if (control.down)
             control.down(x, y, id);
     }
-    for (var _a = 0, controls_3 = controls; _a < controls_3.length; _a++) {
-        var control = controls_3[_a];
+    for (var _a = 0, controls_4 = controls; _a < controls_4.length; _a++) {
+        var control = controls_4[_a];
         if (control.move)
             control.move(x, y, id);
     }
@@ -73,8 +81,8 @@ function pointer_down(x, y, id) {
 function pointer_move(x, y, id) {
     x = x / UNIT_SIZE;
     y = y / UNIT_SIZE;
-    for (var _i = 0, controls_4 = controls; _i < controls_4.length; _i++) {
-        var control = controls_4[_i];
+    for (var _i = 0, controls_5 = controls; _i < controls_5.length; _i++) {
+        var control = controls_5[_i];
         if (control.move)
             control.move(x, y, id);
     }
@@ -83,8 +91,8 @@ function pointer_move(x, y, id) {
 function pointer_up(x, y, id) {
     x = x / UNIT_SIZE;
     y = y / UNIT_SIZE;
-    for (var _i = 0, controls_5 = controls; _i < controls_5.length; _i++) {
-        var control = controls_5[_i];
+    for (var _i = 0, controls_6 = controls; _i < controls_6.length; _i++) {
+        var control = controls_6[_i];
         if (control.up)
             control.up(x, y, id);
     }

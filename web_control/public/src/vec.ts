@@ -27,3 +27,12 @@ export function clamp_length(x: number, y: number, max_length: number): [number,
 	const factor = Math.min(len, max_length) / len
 	return [x * factor, y * factor]
 }
+
+// Returns the angle (in radians) from the X axis to a point.
+export function angle(x: number, y: number): number {
+	return Math.atan2(y, x)
+}
+
+export function from_angle(angle_rad: number, length: number): [number, number] {
+	return [Math.cos(angle_rad) * length, Math.sin(angle_rad) * length]
+}

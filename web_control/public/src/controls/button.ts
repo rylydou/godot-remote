@@ -17,48 +17,53 @@ export function create_button(client: Client, id: string, options?: ButtonOption
 
 	const outline_thickness = .5
 
-	let active = false
 	let pointer_id = 0
+	let is_active = false
+	let synced_active = false
 
-	function sync() {
-		if (!client.is_connected) return
-		client.api.send_input_btn(id, active)
-	}
-
-	return {
+	const button = {
 		client,
 
-		sync: sync,
+		force_sync() {
+			if (!client.is_connected) return
+			if (synced_active == is_active) return
+			button.force_sync()
+		},
+		auto_sync() {
+			synced_active = is_active
+			client.api.send_input_btn(id, synced_active)
+		},
+
 		down(x, y, pid) {
-			if (active) return
+			if (is_active) return
 
 			if (distance_sqr(center_x, center_y, x, y) <= radius * radius) {
-				active = true
+				is_active = true
 				pointer_id = pid
 
-				sync()
+				button.force_sync()
 			}
 		},
 		up(x, y, pid) {
-			if (!active) return
+			if (!is_active) return
 			if (pid != pointer_id) return
 
-			active = false
+			is_active = false
 
-			sync()
+			button.force_sync()
 		},
 		render(ctx) {
 			ctx.translate(center_x, center_y)
 			ctx.beginPath()
 			ctx.ellipse(0, 0, radius, radius, 0, 0, 7)
-			if (active) {
+			if (is_active) {
 				ctx.fill()
 			}
 
 			ctx.lineWidth = outline_thickness
 			ctx.stroke()
 
-			if (active) {
+			if (is_active) {
 				ctx.globalCompositeOperation = 'destination-out'
 			}
 			ctx.font = `bold ${radius}px Bespoke Sans`
@@ -67,5 +72,7 @@ export function create_button(client: Client, id: string, options?: ButtonOption
 			ctx.fillText(label, 0, 0)
 			ctx.globalCompositeOperation = 'source-over'
 		},
-	}
+	} as Control
+
+	return button
 }

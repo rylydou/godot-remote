@@ -23,4 +23,10 @@ export function clamp_length(x, y, max_length) {
     var factor = Math.min(len, max_length) / len;
     return [x * factor, y * factor];
 }
+export function angle(x, y) {
+    return Math.atan2(y, x);
+}
+export function from_angle(angle_rad, length) {
+    return [Math.cos(angle_rad) * length, Math.sin(angle_rad) * length];
+}
 //# sourceMappingURL=vec.js.map

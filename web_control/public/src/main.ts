@@ -1,6 +1,6 @@
 import { fill_canvas } from './canvas.js'
 import { create_client } from './client.js'
-import { UNIT_SIZE } from './consts.js'
+import { AUTO_SYNC_RATE, UNIT_SIZE } from './consts.js'
 import { Control } from './control.js'
 import { create_button } from './controls/button.js'
 import { create_joystick } from './controls/joystick.js'
@@ -22,6 +22,14 @@ setInterval(() => {
 	if (!client.is_connected) return
 	client.ping_server()
 }, 3000)
+
+setInterval(() => {
+	for (const control of controls) {
+		if (control.auto_sync) {
+			control.auto_sync()
+		}
+	}
+}, 1000 / AUTO_SYNC_RATE)
 
 fill_canvas(canvas, () => {
 	width = ctx.canvas.width / window.devicePixelRatio / UNIT_SIZE
