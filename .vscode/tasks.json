@@ -2,14 +2,27 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "tsc watch",
+			"type": "npm",
+			"script": "dev",
+			"path": "web_control/web",
+			"problemMatcher": [],
+			"label": "vite dev",
+		},
+		{
+			"type": "npm",
+			"script": "build",
+			"path": "web_control/web",
 			"group": "build",
-			"type": "typescript",
-			"tsconfig": "web_control/public/tsconfig.json",
-			"option": "watch",
-			"problemMatcher": [
-				"$tsc-watch"
-			],
-		}
+			"problemMatcher": [],
+			"label": "vite build",
+		},
+		{
+			"type": "npm",
+			"script": "build --watch",
+			"path": "web_control/web",
+			"group": "build",
+			"problemMatcher": [],
+			"label": "vite build --watch",
+		},
 	]
 }

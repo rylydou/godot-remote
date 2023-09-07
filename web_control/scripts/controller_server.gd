@@ -78,10 +78,13 @@ func remove_controller(session_id: int) -> void:
 	_controllers.erase(session_id)
 
 func remove_idle_controllers() -> void:
+	var to_remove: Array[int] = []
 	for session_id in _controllers:
 		var controller: Controller = _controllers[session_id]
 		if controller.is_connected: continue
 		if controller.peer_id != 0: continue
+		to_remove.append(session_id)
+	for session_id in to_remove:
 		remove_controller(session_id)
 
 ## Returns true of the controller was transfered from another client
@@ -183,7 +186,7 @@ func _on_receive_session(peer_id: int, session_id: int) -> void:
 	client.session_id = session_id
 
 	if not _controllers.has(session_id):
-		print('Adding a new controller for client')
+		print('Adding a new controller for new client.')
 		add_controller(session_id)
 	
 	assign_client_to_controller(peer_id, session_id)

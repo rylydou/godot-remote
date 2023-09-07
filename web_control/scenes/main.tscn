@@ -23,7 +23,7 @@ theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
 script = ExtResource("1_wfs0e")
 http_server = NodePath("HttpServer")
-http_public_folder = "res://web_control/public"
+http_public_folder = "res://web_control/web/dist"
 ws_server = NodePath("ControllerServer")
 qr_code_texture_rect = NodePath("CenterContainer/QrCode")
 
@@ -67,6 +67,12 @@ theme_override_constants/v_separation = 16
 script = ExtResource("4_7ge8l")
 controller_server = NodePath("../ControllerServer")
 controller_view_scene = ExtResource("4_vsid8")
+
+[node name="ColorRect" type="ColorRect" parent="WebControl"]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 
 [connection signal="pressed" from="WebControl/HBoxContainer/RestartHttpButton" to="WebControl" method="restart_http_server"]
 [connection signal="pressed" from="WebControl/HBoxContainer/RestartWebsocketButton" to="WebControl" method="restart_ws_server"]
