@@ -1,10 +1,10 @@
 [gd_scene load_steps=6 format=3 uid="uid://d3krym437dc1h"]
 
-[ext_resource type="Script" path="res://web_control/scripts/web_control.gd" id="1_wfs0e"]
-[ext_resource type="Script" path="res://addons/godottpd/http_server.gd" id="2_bgimu"]
-[ext_resource type="Script" path="res://web_control/scripts/controller_server.gd" id="3_y8f54"]
-[ext_resource type="Script" path="res://web_control/scripts/controller_server_viewer.gd" id="4_7ge8l"]
-[ext_resource type="PackedScene" uid="uid://dd2ebbiq7mjyb" path="res://web_control/scenes/controller_view.tscn" id="4_vsid8"]
+[ext_resource type="Script" path="res://web_control/scripts/web_control.gd" id="1_3x4v3"]
+[ext_resource type="Script" path="res://addons/godottpd/http_server.gd" id="2_mvcru"]
+[ext_resource type="Script" path="res://web_control/scripts/servers/controller_server.gd" id="3_4dkyd"]
+[ext_resource type="Script" path="res://web_control/scripts/debug/controller_server_viewer.gd" id="4_kqagk"]
+[ext_resource type="PackedScene" uid="uid://dd2ebbiq7mjyb" path="res://example/scenes/controller_view.tscn" id="5_3rsrq"]
 
 [node name="Main" type="Node"]
 
@@ -21,17 +21,17 @@ theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
-script = ExtResource("1_wfs0e")
+script = ExtResource("1_3x4v3")
 http_server = NodePath("HttpServer")
 http_public_folder = "res://web_control/web/dist"
 ws_server = NodePath("ControllerServer")
 qr_code_texture_rect = NodePath("CenterContainer/QrCode")
 
 [node name="HttpServer" type="Node" parent="WebControl"]
-script = ExtResource("2_bgimu")
+script = ExtResource("2_mvcru")
 
 [node name="ControllerServer" type="Node" parent="WebControl"]
-script = ExtResource("3_y8f54")
+script = ExtResource("3_4dkyd")
 
 [node name="CenterContainer" type="CenterContainer" parent="WebControl"]
 layout_mode = 2
@@ -64,9 +64,9 @@ size_flags_vertical = 8
 mouse_filter = 2
 theme_override_constants/h_separation = 16
 theme_override_constants/v_separation = 16
-script = ExtResource("4_7ge8l")
+script = ExtResource("4_kqagk")
 controller_server = NodePath("../ControllerServer")
-controller_view_scene = ExtResource("4_vsid8")
+controller_view_scene = ExtResource("5_3rsrq")
 
 [connection signal="pressed" from="WebControl/HBoxContainer/RestartHttpButton" to="WebControl" method="restart_http_server"]
 [connection signal="pressed" from="WebControl/HBoxContainer/RestartWebsocketButton" to="WebControl" method="restart_ws_server"]

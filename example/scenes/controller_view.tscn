@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://dd2ebbiq7mjyb"]
 
-[ext_resource type="Script" path="res://web_control/scripts/controller_viewer.gd" id="1_cd7ln"]
+[ext_resource type="Script" path="res://web_control/scripts/debug/controller_viewer.gd" id="1_cd7ln"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2uujr"]
 bg_color = Color(0, 0, 0, 1)
