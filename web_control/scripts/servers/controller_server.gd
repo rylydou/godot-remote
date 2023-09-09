@@ -35,6 +35,9 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	super._process(delta)
+	
+	for controller in _controllers.values():
+		pass
 
 func stop() -> void:
 	super.stop()
@@ -164,14 +167,39 @@ func set_input(peer_id: int, id: Variant, value: Variant) -> bool:
 		return false
 	return controller.set_input(id, value)
 
+func get_input(peer_id: int, id: Variant) -> Variant:
+	var client: Client = _clients[peer_id]
+	if not client.is_assigned:
+		printerr('Can not set input. The client sending the input packet is assigned to a controller.')
+		return false
+	
+	var controller: Controller = _controllers[client.session_id]
+	
+	# If the id is a binary index then find the name of it
+	if typeof(id) == TYPE_INT:
+		id = controller.get_input_id_from_index(id)
+	
+	if typeof(id) != TYPE_STRING:
+		printerr('Can not set input. The id is invalid.')
+		return false
+	return controller.get_input(id)
+
 func _on_receive_input_btn(peer_id: int, id: Variant, down: bool) -> void:
-	set_input(peer_id, id, down)
+	var btn: BtnInput = get_input(peer_id, id)
+	btn.is_down = is_down
+	if is_down:
+		btn.is_just_pressed = true
+	else:
+		btn.is_just_released = true
 
 func _on_receive_input_axis(peer_id: int, id: Variant, value: float) -> void:
-	set_input(peer_id, id, value)
+	#set_input_axis(peer_id, value)
+	pass
 
 func _on_receive_input_joy(peer_id: int, id: Variant, x: float, y: float) -> void:
-	set_input(peer_id, id, Vector2(x, y))
+	var position := Vector2(x, y)
+	var joy: JoyInput = get_input(peer_id, id)
+	joy.position = position
 
 func _on_receive_name(peer_id: int, username: String) -> void:
 	var client: Client = _clients[peer_id]

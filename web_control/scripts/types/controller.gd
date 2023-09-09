@@ -42,14 +42,6 @@ func register_input(id: StringName, value: Variant) -> bool:
 	_inputs[id] = value
 	return true
 
-## Returns true if successful
-func set_input(id: StringName, value: Variant) -> bool:
-	if not _registered_inputs.has(id):
-		printerr('Can not set input. Input ',id,' has not been registered yet.')
-		return false
-	_inputs[id] = value
-	return true
-
 ## Returns null if error
 func get_input(id: StringName) -> Variant:
 	if not _registered_inputs.has(id):
