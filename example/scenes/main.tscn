@@ -1,9 +1,9 @@
 [gd_scene load_steps=6 format=3 uid="uid://d3krym437dc1h"]
 
-[ext_resource type="Script" path="res://web_control/scripts/web_control.gd" id="1_3x4v3"]
+[ext_resource type="Script" path="res://addons/godot_remote/scripts/godot_remote.gd" id="1_d2jtu"]
 [ext_resource type="Script" path="res://addons/godottpd/http_server.gd" id="2_mvcru"]
-[ext_resource type="Script" path="res://web_control/scripts/servers/controller_server.gd" id="3_4dkyd"]
-[ext_resource type="Script" path="res://web_control/scripts/debug/controller_server_viewer.gd" id="4_kqagk"]
+[ext_resource type="Script" path="res://addons/godot_remote/scripts/servers/controller_server.gd" id="3_4dkyd"]
+[ext_resource type="Script" path="res://addons/godot_remote/scripts/debug/controller_server_viewer.gd" id="4_qlcoa"]
 [ext_resource type="PackedScene" uid="uid://dd2ebbiq7mjyb" path="res://example/scenes/controller_view.tscn" id="5_3rsrq"]
 
 [node name="Main" type="Node"]
@@ -21,7 +21,7 @@ theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
-script = ExtResource("1_3x4v3")
+script = ExtResource("1_d2jtu")
 http_server = NodePath("HttpServer")
 http_public_folder = "res://web_control/web/dist"
 ws_server = NodePath("ControllerServer")
@@ -64,7 +64,7 @@ size_flags_vertical = 8
 mouse_filter = 2
 theme_override_constants/h_separation = 16
 theme_override_constants/v_separation = 16
-script = ExtResource("4_kqagk")
+script = ExtResource("4_qlcoa")
 controller_server = NodePath("../ControllerServer")
 controller_view_scene = ExtResource("5_3rsrq")
 
