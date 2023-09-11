@@ -12,7 +12,7 @@ var fallback_page: String = ''
 
 ## An ordered list of extensions that will be checked
 ## if no file extension is provided by the request
-var extensions: PackedStringArray = ['html', 'js']
+var extensions: PackedStringArray = ['html']
 
 ## A list of extensions that will be excluded if requested
 var exclude_extensions: PackedStringArray = []
@@ -20,7 +20,7 @@ var exclude_extensions: PackedStringArray = []
 ## A dictionary of regex find a replace for every request
 var page_regex: Dictionary
 
-## Creates an HttpFileRouter intance
+## Creates an HttpFileRouter instance
 # #### Parameters
 # - path: Full path to the folder which will be exposed to web
 # - options: Optional Dictionary of options which can be configured.
@@ -61,19 +61,19 @@ func handle_get(request: HttpRequest, response: HttpResponse) -> void:
 	
 	# GDScript must be excluded, unless it is used as a preprocessor (php-like)
 	if (file_exists and not serving_path.get_extension() in ['gd'] + Array(exclude_extensions)):
-		#print('[HTTP] Serving ',serving_path)
+		#print('[HTTP] Serving: ',serving_path)
 		response.send_raw(
 			200,
 			_serve_file(serving_path),
 			_get_mime(serving_path.get_extension())
 			)
 	else:
-		#print('[HTTP] Serving fallback')
+		#print('[HTTP] Serving fallback page')
 		if fallback_page.length() > 0:
 			serving_path = path + '/' + fallback_page
 			response.send_raw(200 if index_page == fallback_page else 404, _serve_file(serving_path), _get_mime(fallback_page.get_extension()))
 		else:
-			prints('[HTTP] Not found', serving_path)
+			print('[HTTP] Not found: ', serving_path)
 			response.send_raw(404)
 
 # Reads a file as text

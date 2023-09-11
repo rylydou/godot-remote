@@ -38,7 +38,7 @@ func start(port: int) -> int:
 	set_process(true)
 	
 	if tcp_server.is_listening():
-		stop()
+		tcp_server.stop()
 	
 	return tcp_server.listen(port)
 

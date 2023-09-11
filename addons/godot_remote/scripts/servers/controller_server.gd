@@ -1,5 +1,9 @@
 class_name ControllerServer extends WebSocketServer
 
+const BtnInput = preload('res://addons/godot_remote/scripts/types/btn_input.gd')
+const AxisInput = preload('res://addons/godot_remote/scripts/types/axis_input.gd')
+const JoyInput = preload('res://addons/godot_remote/scripts/types/joy_input.gd')
+
 static var instance: ControllerServer = null
 
 signal controller_added(session_id: int)
@@ -67,11 +71,11 @@ func add_controller(session_id: int) -> Controller:
 
 	# TODO: LAYOUT SYSTEM
 	controller.clear_inputs()
-	controller.register_input(&'a', false)
-	controller.register_input(&'b', false)
-	controller.register_input(&'x', false)
-	controller.register_input(&'y', false)
-	controller.register_input(&'l', Vector2.ZERO)
+	controller.register_input(&'a', BtnInput.new())
+	controller.register_input(&'b', BtnInput.new())
+	controller.register_input(&'x', BtnInput.new())
+	controller.register_input(&'y', BtnInput.new())
+	controller.register_input(&'l', JoyInput.new())
 	return controller
 
 func remove_controller(session_id: int) -> void:
@@ -184,7 +188,7 @@ func get_input(peer_id: int, id: Variant) -> Variant:
 		return false
 	return controller.get_input(id)
 
-func _on_receive_input_btn(peer_id: int, id: Variant, down: bool) -> void:
+func _on_receive_input_btn(peer_id: int, id: Variant, is_down: bool) -> void:
 	var btn: BtnInput = get_input(peer_id, id)
 	btn.is_down = is_down
 	if is_down:

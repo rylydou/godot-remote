@@ -27,6 +27,7 @@ gdscript/warnings/unused_signal=0
 gdscript/warnings/shadowed_variable=0
 gdscript/warnings/unreachable_code=0
 gdscript/warnings/unreachable_pattern=0
+gdscript/warnings/static_called_on_instance=0
 gdscript/warnings/redundant_await=0
 gdscript/warnings/integer_division=0
 gdscript/warnings/narrowing_conversion=0
@@ -38,7 +39,7 @@ window/size/viewport_height=540
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/editor_icon_previewer/plugin.cfg", "res://addons/godottpd/plugin.cfg", "res://addons/qrcode/plugin.cfg")
+enabled=PackedStringArray("res://addons/editor_icon_previewer/plugin.cfg", "res://addons/godottpd/plugin.cfg", "res://addons/qr_code/plugin.cfg", "res://addons/qrcode/plugin.cfg")
 
 [rendering]
 

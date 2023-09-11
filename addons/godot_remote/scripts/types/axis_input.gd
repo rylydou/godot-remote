@@ -1,5 +1,5 @@
 extends RefCounted
 
-var is_down := false
-var is_just_pressed := false
+var values := 0.0
+var max_distance := 0.0
 var is_just_released := false

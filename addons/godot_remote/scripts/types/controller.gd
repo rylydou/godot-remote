@@ -50,32 +50,18 @@ func get_input(id: StringName) -> Variant:
 	return _inputs[id]
 
 func is_btn_down(id: StringName) -> bool:
-	var input = get_input(id)
-	if input == null: return false
-	if typeof(input) != TYPE_BOOL:
-		printerr('Input ',id,' is not a button.')
-		return false
-	
-	var is_down: bool = input
-	return is_down
+	var btn: BtnInput = get_input(id)
+	if btn == null: return false
+	return btn.is_down
 
 func get_axis(id: StringName) -> float:
-	var input = get_input(id)
-	if input == null: return 0.
-	if typeof(input) != TYPE_FLOAT:
-		printerr('Input ',id,' is not an axis.')
-		return 0.
-	
-	var value: float = input
-	return value
+	return 0.0;
+	#var axis: AxisInput = get_input(id)
+	#if axis == null: return 0.
+	#return axis.value
 
 func get_joy(id: StringName) -> Vector2:
-	var input = get_input(id)
-	if input == null: return Vector2.ZERO
-	if typeof(input) != TYPE_VECTOR2:
-		printerr('Input ',id,' is not a joystick.')
-		return Vector2.ZERO
+	var joy: JoyInput = get_input(id)
+	if joy == null: return Vector2.ZERO
 	
-	var position: Vector2 = input
-	return position
-	
+	return joy.position

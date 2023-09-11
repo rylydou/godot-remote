@@ -1,7 +1,5 @@
 # An HTTP request received by the server
-extends RefCounted
-class_name HttpRequest
-
+class_name HttpRequest extends RefCounted
 
 # A dictionary of the headers of the request
 var headers: Dictionary
@@ -45,7 +43,7 @@ func get_body_parsed() -> Variant:
 		
 		return data
 	
-	# Not supported contenty type parsing... for now
+	# Not supported content type parsing... for now
 	return null
 
 # Override `str()` method, automatically called in `print()` function
