@@ -895,27 +895,28 @@ func _init(error_correction_: ErrorCorrection = ErrorCorrection.LOW) -> void:
 		_static_init()
 
 ## generate an QR code image
-func generate_image(module_px_size: int = 1, light_module_color: Color = Color.WHITE, dark_module_color: Color = Color.BLACK, quite_zone_size: int = 1) -> Image:
+func generate_image(module_px_size: int = 1, light_module_color: Color = Color.WHITE, dark_module_color: Color = Color.BLACK, quiet_zone_size: int = 4) -> Image:
 	module_px_size = max(1, module_px_size)
-	quite_zone_size = max(0, quite_zone_size)
+	quiet_zone_size = max(0, quiet_zone_size)
 
 	var qr_code: PackedByteArray = self.encode()
 
 	var module_count: int = self.get_module_count()
-	var image: Image = Image.create((module_count + quite_zone_size*2)*module_px_size, (module_count + quite_zone_size*2)*module_px_size, false, Image.FORMAT_RGB8)
+	var image_size: int = (module_count + 2 * quiet_zone_size) * module_px_size
+	var image: Image = Image.create(image_size, image_size, false, Image.FORMAT_RGB8)
 	image.fill(light_module_color)
 
 	for y in range(module_count):
 		for x in range(module_count):
 			var color: Color = Color.PINK
-			match qr_code[x + y*module_count]:
+			match qr_code[x + y * module_count]:
 				0:
 					color = light_module_color
 				1:
 					color = dark_module_color
 			for offset_x in range(module_px_size):
 				for offset_y in range(module_px_size):
-					image.set_pixel((x + quite_zone_size)*module_px_size + offset_x, (y + quite_zone_size)*module_px_size + offset_y, color)
+					image.set_pixel((x + quiet_zone_size) * module_px_size + offset_x, (y + quiet_zone_size) * module_px_size + offset_y, color)
 
 	return image
 
@@ -1352,7 +1353,7 @@ static func _place_version(qr_data: PackedByteArray, version: int) -> void:
 		qr_data[y + x * module_count] = int(_get_state(code, idx))
 
 # returns qr module data, ordered by rows
-# (col/x, row/y)       | index
+# (col/x, row/y)	   | index
 # (0, 0) (1, 0) (2, 0) | 0, 1, 2
 # (0, 1) (1, 1) (2, 1) | 3, 4, 5
 # (0, 2) (1, 2) (2, 2) | 6, 7, 8

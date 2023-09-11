@@ -1,4 +1,4 @@
-class_name Client extends RefCounted
+extends RefCounted
 
 signal assignment_changed(is_assigned: bool)
 

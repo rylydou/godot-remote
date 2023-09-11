@@ -1,15 +1,28 @@
 class_name ControllerServer extends WebSocketServer
 
+# Imports
+const API = preload('res://addons/godot_remote/scripts/types/api.gd')
+const Client = preload('res://addons/godot_remote/scripts/types/client.gd')
+const Controller = preload('res://addons/godot_remote/scripts/types/controller.gd')
 const BtnInput = preload('res://addons/godot_remote/scripts/types/btn_input.gd')
 const AxisInput = preload('res://addons/godot_remote/scripts/types/axis_input.gd')
 const JoyInput = preload('res://addons/godot_remote/scripts/types/joy_input.gd')
+const JsonAPI = preload('res://addons/godot_remote/scripts/apis/json_api.gd')
 
 static var instance: ControllerServer = null
+
+enum InputHandleMode {
+	Manual,
+	Idle,
+	Physics,
+}
 
 signal controller_added(session_id: int)
 signal controller_removed(session_id: int)
 
-@onready var api: API = JsonAPI.new()
+@export var input_handle_mode := InputHandleMode.Idle
+
+var api: API = JsonAPI.new()
 
 ## Peer ID (int) to Client
 var _clients: Dictionary = {}
@@ -39,9 +52,18 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	super._process(delta)
-	
+	if input_handle_mode == InputHandleMode.Idle:
+		handle_all_inputs()
+
+func _physics_process(delta: float) -> void:
+	if input_handle_mode == InputHandleMode.Physics:
+		handle_all_inputs()
+
+func handle_all_inputs() -> void:
 	for controller in _controllers.values():
-		pass
+		for input in controller._inputs:
+			if input.has_method('handle'):
+				input.call('handle')
 
 func stop() -> void:
 	super.stop()
@@ -152,24 +174,6 @@ func _on_receive_pong(peer_id: int, sts: int, rts: int) -> void:
 	client.avg_ping_ms = client.ping_sum/client.ping_count
 	client.ongoing_pings -= 1
 	client.last_heartbeat_timestamp = timestamp
-
-## Returns true if successful
-func set_input(peer_id: int, id: Variant, value: Variant) -> bool:
-	var client: Client = _clients[peer_id]
-	if not client.is_assigned:
-		printerr('Can not set input. The client sending the input packet is assigned to a controller.')
-		return false
-	
-	var controller: Controller = _controllers[client.session_id]
-	
-	# If the id is a binary index then find the name of it
-	if typeof(id) == TYPE_INT:
-		id = controller.get_input_id_from_index(id)
-	
-	if typeof(id) != TYPE_STRING:
-		printerr('Can not set input. The id is invalid.')
-		return false
-	return controller.set_input(id, value)
 
 func get_input(peer_id: int, id: Variant) -> Variant:
 	var client: Client = _clients[peer_id]

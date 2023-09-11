@@ -1,4 +1,8 @@
-class_name Controller extends RefCounted
+extends RefCounted
+
+const BtnInput = preload('res://addons/godot_remote/scripts/types/btn_input.gd')
+const AxisInput = preload('res://addons/godot_remote/scripts/types/axis_input.gd')
+const JoyInput = preload('res://addons/godot_remote/scripts/types/joy_input.gd')
 
 signal connection_changed(is_connected: bool)
 signal client_changed(from_peer_id: int, to_peer_id: int)
@@ -55,10 +59,9 @@ func is_btn_down(id: StringName) -> bool:
 	return btn.is_down
 
 func get_axis(id: StringName) -> float:
-	return 0.0;
-	#var axis: AxisInput = get_input(id)
-	#if axis == null: return 0.
-	#return axis.value
+	var axis: AxisInput = get_input(id)
+	if axis == null: return 0.
+	return axis.value
 
 func get_joy(id: StringName) -> Vector2:
 	var joy: JoyInput = get_input(id)

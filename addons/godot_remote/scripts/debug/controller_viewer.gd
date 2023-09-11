@@ -1,5 +1,7 @@
 class_name ControllerViewer extends CanvasItem
 
+const Controller = preload('res://addons/godot_remote/scripts/types/controller.gd')
+
 @export var controller_server: ControllerServer
 @export var session_id: int
 

@@ -1,4 +1,4 @@
-class_name API extends RefCounted
+extends RefCounted
 
 signal send_packet(peer_id: int, data: Variant)
 

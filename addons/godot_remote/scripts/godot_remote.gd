@@ -3,8 +3,8 @@ class_name GodotRemote extends Node
 const QrCode = preload('res://addons/qr_code/qr_code.gd')
 const QrCodeRect = preload('res://addons/qr_code/qr_code_rect.gd')
 
-@export var max_port_retries = 10
 @export var starting_port = 8080
+@export var max_port_retries = 10
 
 @export_group('HTTP Server', 'http_')
 @export var http_server: HttpServer
@@ -20,7 +20,6 @@ var ws_server_port: int
 var ws_server_address: String
 
 @export_group('UI References')
-@export var qr_code_texture_rect: TextureRect
 @export var qr_code: QrCodeRect
 
 var ip_address: String
@@ -35,8 +34,7 @@ func _ready() -> void:
 	ws_server_address = 'ws://' + ip_address + ':' + str(ws_server_port)
 	print('Websocket server address: ',ws_server_address)
 	
-	http_server.server_identifier = 'Godot Remote'
-	http_server.port = http_server_port
+	http_server.server_identifier = 'Godot Remote Server'
 	http_file_router = HttpFileRouter.new(http_public_folder)
 	http_server.register_router('/*', http_file_router)
 	
@@ -61,7 +59,7 @@ func start_http_server(port: int, max_retries: int) -> void:
 	update_http_address()
 
 func update_http_address() -> void:
-	http_server_address = 'http://' + ip_address + ':' + str(http_server_port)
+	http_server_address = str('http://',ip_address,':',http_server_port)
 	print('[HTTP] Server address: ',http_server_address)
 	qr_code.data = http_server_address
 
@@ -72,17 +70,14 @@ func start_ws_server(port: int, max_retries: int) -> void:
 	update_ws_address()
 
 func update_ws_address() -> void:
-	ws_server_address = 'http://' + ip_address + ':' + str(ws_server_port)
+	ws_server_address = str('http://',ip_address,':',ws_server_port)
 	print('[WebSocket] Server address: ',ws_server_address)
 
 func try_find_port(port: int, max_retries: int, start_server: Callable) -> int:
 	for i in range(max_retries):
-		var err = start_server.call(port)
+		var err: int = start_server.call(port)
 		match err:
-			OK:
-				ws_server_port = port
-				update_ws_address()
-				return port
+			OK: return port
 			ERR_ALREADY_IN_USE:
 				port += 1
 				continue

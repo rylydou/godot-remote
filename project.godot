@@ -39,7 +39,7 @@ window/size/viewport_height=540
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/editor_icon_previewer/plugin.cfg", "res://addons/godottpd/plugin.cfg", "res://addons/qr_code/plugin.cfg", "res://addons/qrcode/plugin.cfg")
+enabled=PackedStringArray("res://addons/editor_icon_previewer/plugin.cfg", "res://addons/godottpd/plugin.cfg", "res://addons/qr_code/plugin.cfg")
 
 [rendering]
 

@@ -1,4 +1,4 @@
-class_name JsonAPI extends API
+extends 'res://addons/godot_remote/scripts/types/api.gd'
 
 func handle_packet(peer_id: int, data: Variant) -> void:
 	if typeof(data) != TYPE_STRING: return
