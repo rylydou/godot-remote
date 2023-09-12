@@ -62,6 +62,7 @@ func _physics_process(delta: float) -> void:
 func handle_all_inputs() -> void:
 	for controller in _controllers.values():
 		for input in controller._inputs:
+			if typeof(input) != TYPE_OBJECT: continue
 			if input.has_method('handle'):
 				input.call('handle')
 

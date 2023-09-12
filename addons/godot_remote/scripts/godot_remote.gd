@@ -14,8 +14,8 @@ var http_server_address: String
 var http_file_router: HttpFileRouter
 
 @export_group('Websocket Server', 'ws_')
-@export var ws_heartbeat_time := 1000
 @export var ws_server: WebSocketServer
+@export var ws_heartbeat_time := 1000
 var ws_server_port: int
 var ws_server_address: String
 
@@ -55,7 +55,10 @@ func start_http_server(port: int, max_retries: int) -> void:
 	http_server.stop()
 	
 	print('[HTTP] Finding an open port starting at: ',port)
-	http_server_port = try_find_port(port, max_retries, func(port: int): http_server.start(port))
+	http_server_port = try_find_port(port, max_retries, func(port: int): return http_server.start(port))
+	if ws_server_port <= 0:
+		printerr('[HTTP] Could not find an open port in ',max_retries,' tries.')
+		return
 	update_http_address()
 
 func update_http_address() -> void:
@@ -66,7 +69,11 @@ func update_http_address() -> void:
 func start_ws_server(port: int, max_retries: int) -> void:
 	ws_server.stop()
 	
-	ws_server_port = try_find_port(port, max_retries, func(port: int): ws_server.start(port))
+	print('[WebSocket] Finding an open port starting at: ',port)
+	ws_server_port = try_find_port(port, max_retries, func(port: int): return ws_server.start(port))
+	if ws_server_port <= 0:
+		printerr('[WebSocket] Could not find an open port in ',max_retries,' tries.')
+		return
 	update_ws_address()
 
 func update_ws_address() -> void:

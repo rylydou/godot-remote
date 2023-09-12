@@ -68,9 +68,7 @@ func start(port: int, bind_address: String = "*") -> int:
 	set_process(true)
 	var err := _tcp_server.listen(port, bind_address)
 	match err:
-		ERR_ALREADY_IN_USE:
-			print("[HTTP] Could not bind to port %d, already in use" % [port])
-			stop()
+		OK, ERR_ALREADY_IN_USE: pass
 		_:
 			printerr("[HTTP] Could not start server. An error occurred when starting the TCP Server: ", error_string(err))
 	return err
