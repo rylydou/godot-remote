@@ -22,12 +22,12 @@ var username := ''
 func _init(session_id: int) -> void:
 	self.session_id = session_id
 
-## For converting binary index to input names
+## For converting binary index to input names.
 var _registered_inputs: Array[StringName] = []
-## Input id (StringName) to input (Variant)
+## Input id (StringName) to input (Variant).
 var _inputs := {}
 
-## Returns an empty string if not found
+## Returns an empty StringName (falsy) if not found.
 func get_input_id_from_index(index: int) -> StringName:
 	if index < 0: return &''
 	if index >= _registered_inputs.size(): return &''
@@ -37,7 +37,7 @@ func clear_inputs() -> void:
 	_registered_inputs.clear()
 	_inputs.clear()
 
-## Returns true if successful
+## Returns true if successful.
 func register_input(id: StringName, value: Variant) -> bool:
 	if _registered_inputs.has(id):
 		printerr('Can not register input. Input ',id,' already exists.')
@@ -46,25 +46,31 @@ func register_input(id: StringName, value: Variant) -> bool:
 	_inputs[id] = value
 	return true
 
-## Returns null if error
-func get_input(id: StringName) -> Variant:
+## Returns null if not found.
+func get_input(id: Variant) -> Variant:
+	# If the id is a binary index then find the name of it
+	if typeof(id) == TYPE_INT:
+		id = get_input_id_from_index(id)
+	if typeof(id) != TYPE_STRING:
+		printerr('The id is invalid.')
+		return null
+	
 	if not _registered_inputs.has(id):
 		printerr('Input ',id,' does not exist.')
 		return null
 	return _inputs[id]
 
-func is_btn_down(id: StringName) -> bool:
+func is_btn_down(id: Variant) -> bool:
 	var btn: BtnInput = get_input(id)
 	if btn == null: return false
 	return btn.is_down
 
-func get_axis(id: StringName) -> float:
+func get_axis(id: Variant) -> float:
 	var axis: AxisInput = get_input(id)
 	if axis == null: return 0.
 	return axis.value
 
-func get_joy(id: StringName) -> Vector2:
+func get_joy(id: Variant) -> Vector2:
 	var joy: JoyInput = get_input(id)
 	if joy == null: return Vector2.ZERO
-	
 	return joy.position

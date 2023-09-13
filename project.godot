@@ -16,6 +16,10 @@ config/features=PackedStringArray("4.1", "Mobile")
 run/low_processor_mode=true
 config/icon="res://icon.svg"
 
+[autoload]
+
+Remote="*res://addons/godot_remote/scenes/autoloads/remote.tscn"
+
 [debug]
 
 gdscript/warnings/exclude_addons=false
@@ -39,7 +43,7 @@ window/size/viewport_height=540
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/editor_icon_previewer/plugin.cfg", "res://addons/godottpd/plugin.cfg", "res://addons/qr_code/plugin.cfg")
+enabled=PackedStringArray("res://addons/editor_icon_previewer/plugin.cfg", "res://addons/godot_remote/plugin.cfg", "res://addons/godottpd/plugin.cfg", "res://addons/qr_code/plugin.cfg")
 
 [rendering]
 

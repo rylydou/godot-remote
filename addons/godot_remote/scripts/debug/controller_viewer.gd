@@ -2,7 +2,7 @@ class_name ControllerViewer extends CanvasItem
 
 const Controller = preload('res://addons/godot_remote/scripts/types/controller.gd')
 
-@export var controller_server: ControllerServer
+@export var remote: GodotRemote
 @export var session_id: int
 
 @export var a_btn: Control
@@ -14,7 +14,7 @@ const Controller = preload('res://addons/godot_remote/scripts/types/controller.g
 @export var left_stick_container: Control
 
 func _process(delta: float) -> void:
-	var controller: Controller = controller_server.get_controller(session_id)
+	var controller: Controller = remote.get_controller(session_id)
 	if not controller:
 		modulate.a = .25
 		return
