@@ -202,13 +202,12 @@ func _on_receive_input_btn(peer_id: int, id: Variant, is_down: bool) -> void:
 		btn.is_just_released = true
 
 func _on_receive_input_axis(peer_id: int, id: Variant, value: float) -> void:
-	#set_input_axis(peer_id, value)
-	pass
+	var axis: AxisInput = get_input(peer_id, id)
+	axis.value = value
 
 func _on_receive_input_joy(peer_id: int, id: Variant, x: float, y: float) -> void:
-	var position := Vector2(x, y)
 	var joy: JoyInput = get_input(peer_id, id)
-	joy.position = position
+	joy.position = Vector2(x, y)
 
 func _on_receive_name(peer_id: int, username: String) -> void:
 	var client: Client = _clients[peer_id]
