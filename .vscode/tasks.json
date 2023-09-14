@@ -4,14 +4,14 @@
 		{
 			"type": "npm",
 			"script": "dev",
-			"path": "web_control/web",
+			"path": "addons/godot_remote/web",
 			"problemMatcher": [],
 			"label": "vite dev",
 		},
 		{
 			"type": "npm",
 			"script": "build",
-			"path": "web_control/web",
+			"path": "addons/godot_remote/web",
 			"group": "build",
 			"problemMatcher": [],
 			"label": "vite build",
@@ -19,7 +19,7 @@
 		{
 			"type": "npm",
 			"script": "build --watch",
-			"path": "web_control/web",
+			"path": "addons/godot_remote/web",
 			"group": "build",
 			"problemMatcher": [],
 			"label": "vite build --watch",
