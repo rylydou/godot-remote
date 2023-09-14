@@ -1,4 +1,4 @@
-extends CanvasItem
+extends Node
 
 @export var controller_view_scene: PackedScene
 

@@ -33,11 +33,11 @@ func get_body_parsed() -> Variant:
 		
 	if(content_type == "application/json"):
 		return JSON.parse_string(body)
-
+	
 	if(content_type == "application/x-www-form-urlencoded"):
 		var data = {}
 		
-		for body_part in  body.split("&"):
+		for body_part in body.split("&"):
 			var key_and_value = body_part.split("=")
 			data[key_and_value[0]] = key_and_value[1]
 		

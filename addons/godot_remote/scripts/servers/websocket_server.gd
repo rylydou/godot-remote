@@ -1,3 +1,4 @@
+# This script uses a modified script from
 # https://github.com/godotengine/godot-demo-projects/blob/e9f0f75c5ba0fe81197b35f31c73e09a70be5054/networking/websocket_chat/websocket/WebSocketServer.gd
 class_name WebSocketServer extends Node
 

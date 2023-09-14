@@ -29,8 +29,8 @@ var _inputs := {}
 
 ## Returns an empty StringName (falsy) if not found.
 func get_input_id_from_index(index: int) -> StringName:
-	if index < 0: return &''
-	if index >= _registered_inputs.size(): return &''
+	assert(index >= 0)
+	assert(index < _registered_inputs.size())
 	return _registered_inputs[index]
 
 func clear_inputs() -> void:
@@ -40,7 +40,7 @@ func clear_inputs() -> void:
 ## Returns true if successful.
 func register_input(id: StringName, value: Variant) -> bool:
 	if _registered_inputs.has(id):
-		printerr('Can not register input. Input ',id,' already exists.')
+		push_error('Can not register input. Input ',id,' already exists.')
 		return false
 	_registered_inputs.append(id)
 	_inputs[id] = value
@@ -51,26 +51,25 @@ func get_input(id: Variant) -> Variant:
 	# If the id is a binary index then find the name of it
 	if typeof(id) == TYPE_INT:
 		id = get_input_id_from_index(id)
-	if typeof(id) != TYPE_STRING:
-		printerr('The id is invalid.')
-		return null
+	if typeof(id) == TYPE_STRING:
+		id = StringName(id)
 	
-	if not _registered_inputs.has(id):
-		printerr('Input ',id,' does not exist.')
-		return null
+	assert(typeof(id) == TYPE_STRING_NAME, 'Can not get input. The id is invalid: '+str(id))
+	
+	assert(_registered_inputs.has(id), str('Input ',id,' does not exist.'))
 	return _inputs[id]
 
 func is_btn_down(id: Variant) -> bool:
 	var btn: BtnInput = get_input(id)
-	if btn == null: return false
+	if not btn: return false
 	return btn.is_down
 
 func get_axis(id: Variant) -> float:
 	var axis: AxisInput = get_input(id)
-	if axis == null: return 0.
+	if not axis: return 0.
 	return axis.value
 
 func get_joy(id: Variant) -> Vector2:
 	var joy: JoyInput = get_input(id)
-	if joy == null: return Vector2.ZERO
+	if not joy: return Vector2.ZERO
 	return joy.position

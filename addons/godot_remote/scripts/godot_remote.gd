@@ -2,13 +2,13 @@ class_name GodotRemote extends Node
 
 # Imports
 const Util = preload('res://addons/godot_remote/scripts/util.gd')
-const JsonAPI = preload('res://addons/godot_remote/scripts/apis/json_api.gd')
 const API = preload('res://addons/godot_remote/scripts/types/api.gd')
 const Client = preload('res://addons/godot_remote/scripts/types/client.gd')
 const Controller = preload('res://addons/godot_remote/scripts/types/controller.gd')
 const BtnInput = preload('res://addons/godot_remote/scripts/types/btn_input.gd')
 const AxisInput = preload('res://addons/godot_remote/scripts/types/axis_input.gd')
 const JoyInput = preload('res://addons/godot_remote/scripts/types/joy_input.gd')
+const JsonAPI = preload('res://addons/godot_remote/scripts/apis/json_api.gd')
 
 enum InputHandleMode {
 	Manual,
@@ -16,7 +16,9 @@ enum InputHandleMode {
 	Physics,
 }
 
+## A empty string if a error occurred
 signal http_address_changed(address: String)
+
 signal controller_added(session_id: int)
 signal controller_removed(session_id: int)
 
@@ -25,7 +27,7 @@ signal controller_removed(session_id: int)
 @export var input_handle_mode := InputHandleMode.Idle
 var api: API = JsonAPI.new()
 
-@export_group('HTTP Server', 'http_')
+@export_group('Remote/HTTP Server', 'http_')
 @export var http_server: HttpServer
 @export_dir var http_public_folder := 'res://addons/godot_remote/web/dist'
 var http_server_port: int
@@ -50,21 +52,21 @@ func _ready() -> void:
 	
 	var ip_addresses = IP.get_local_addresses()
 	print('[Remote] Available IP addresses: ',ip_addresses)
-	
 	ip_address = str(ip_addresses[0])
 	print('[Remote] Using IP address: ',ip_address)
 	
 	http_file_router = HttpFileRouter.new(http_public_folder)
 	http_server.register_router('/*', http_file_router)
 	
-	start_servers()
+	# Start after a one frame delay to allow listener to subscribe to signals before they get fired.
+	get_tree().process_frame.connect(start_servers, Node.CONNECT_ONE_SHOT)
 
 func _connect_signals() -> void:
 	ws_server.client_connected.connect(_on_client_connected)
 	ws_server.client_disconnected.connect(_on_client_disconnected)
 	ws_server.message_received.connect(api.handle_packet)
-
-	api.send_packet.connect(func(peer_id: int, message: Variant): return ws_server.send(peer_id, message))
+	
+	api.send_packet.connect(ws_server.send)
 	api.receive_ping.connect(_on_receive_ping)
 	api.receive_pong.connect(_on_receive_pong)
 	api.receive_input_btn.connect(_on_receive_input_btn)
@@ -76,42 +78,38 @@ func _connect_signals() -> void:
 
 func start_servers() -> void:
 	print('[Remote] Starting servers')
-	var current_port = starting_port
-	
-	print('[HTTP] Finding port and starting')
-	start_http_server(current_port, max_port_retries)
-	
-	print('[WebSocket] Finding port and starting')
-	start_ws_server(current_port, max_port_retries)
+	start_http_server(starting_port, max_port_retries)
+	start_ws_server(http_server_port, max_port_retries)
 
 func start_http_server(port: int, max_retries: int) -> void:
 	http_server.stop()
 	
-	print('[HTTP] Finding an open port starting at: ',port)
+	print('[Remote/HTTP] Finding an open port starting at: ',port)
 	http_server_port = Util.find_open_port(port, max_retries, func(port: int): return http_server.start(port))
 	if http_server_port <= 0:
-		printerr('[HTTP] Could not find an open port in ',max_retries,' tries.')
+		printerr('[Remote/HTTP] Could not find an open port in ',max_retries,' tries.')
 		return
 	_update_http_address()
 
 func _update_http_address() -> void:
 	http_server_address = str('http://',ip_address,':',http_server_port)
-	print('[HTTP] Server address: ',http_server_address)
+	print('[Remote/HTTP] Server started at address: ',http_server_address)
 	http_address_changed.emit(http_server_address)
 
 func start_ws_server(port: int, max_retries: int) -> void:
 	ws_server.stop()
 	
-	print('[WebSocket] Finding an open port starting at: ',port)
+	print('[Remote/WebSocket] Finding an open port starting at: ',port)
 	ws_server_port = Util.find_open_port(port, max_retries, func(port: int): return ws_server.start(port))
 	if ws_server_port <= 0:
-		printerr('[WebSocket] Could not find an open port in ',max_retries,' tries.')
+		printerr('[Remote/WebSocket] Could not find an open port in ',max_retries,' tries.')
 		return
 	_update_ws_address()
 
 func _update_ws_address() -> void:
 	ws_server_address = str('http://',ip_address,':',ws_server_port)
-	print('[WebSocket] Server address: ',ws_server_address)
+	print('[Remote/WebSocket] Server started at address: ',ws_server_address)
+	http_file_router.secrets['__WS_ADDRESS__'] = ws_server_address
 
 func _process(delta: float) -> void:
 	if input_handle_mode == InputHandleMode.Idle:
@@ -128,8 +126,8 @@ func handle_all_inputs() -> void:
 			if input.has_method('handle'):
 				input.call('handle')
 
-## Returns null if client is not found
 func get_client(peer_id: int) -> Client:
+	# assert(_clients.has(peer_id), str('[Remote] Cannot get client. A client with peer id #',peer_id,' does not exist.'))
 	if not _clients.has(peer_id): return null
 	return _clients[peer_id]
 
@@ -137,32 +135,33 @@ func kick_client(peer_id: int, reason: String) -> void:
 	ws_server.close_socket(peer_id, 1000, reason)
 	_clients.erase(peer_id)
 
-## Returns null if not found
 func get_controller(session_id: int) -> Controller:
+	# assert(_controllers.has(session_id), str('[Remote] Cannot get controller. A controller with session id #',session_id,' does not exist.'))
 	if not _controllers.has(session_id): return null
 	return _controllers[session_id]
 
-## Returns null if not found
-func get_controller_by_peer(peer_id: int) -> Controller:
-	var client: Client = _clients[peer_id]
-	if not client.is_assigned: return null
-	return get_controller(peer_id)
-
 func get_input(session_id: int, id: Variant) -> Variant:
 	var controller := get_controller(session_id)
+	assert(controller, str('[Remote] Cannot get controller. A controller with session id #',session_id,' does not exist.'))
 	return controller.get_input(id)
+
+func get_controller_by_peer(peer_id: int) -> Controller:
+	var client := get_client(peer_id)
+	assert(client, str('[Remote] Cannot get controller by peer id. A client with peer id #',peer_id,' does not exist.'))
+	if not client.is_assigned: return null
+	return get_controller(client.session_id)
 
 func get_input_by_peer(peer_id: int, id: Variant) -> Variant:
 	var controller := get_controller_by_peer(peer_id)
+	assert(controller, str('[Remote] Cannot get controller by peer id. A controller assigned to client peer id #',peer_id,' was not found.'))
 	return controller.get_input(id)
 
 func add_controller(session_id: int) -> Controller:
-	assert(not _controllers.has(session_id), str('Cannot add controller. A controller with session id #', session_id,' already exists.'))
+	assert(not _controllers.has(session_id), str('[Remote] Cannot add controller. A controller with session id #',session_id,' already exists.'))
 
 	var controller := Controller.new(session_id)
 	_controllers[session_id] = controller
-	controller_added.emit(session_id)
-
+	
 	# TODO: LAYOUT SYSTEM
 	controller.clear_inputs()
 	controller.register_input(&'a', BtnInput.new())
@@ -170,10 +169,13 @@ func add_controller(session_id: int) -> Controller:
 	controller.register_input(&'x', BtnInput.new())
 	controller.register_input(&'y', BtnInput.new())
 	controller.register_input(&'l', JoyInput.new())
+	
+	controller_added.emit(session_id)
+	
 	return controller
 
 func remove_controller(session_id: int) -> void:
-	assert(_controllers.has(session_id), str('Cannot remove controller. A controller with session id #', session_id,' does not exist.'))
+	assert(_controllers.has(session_id), str('[Remote] Cannot remove controller. A controller with session id #',session_id,' does not exist.'))
 
 	controller_removed.emit(session_id)
 	_controllers.erase(session_id)
@@ -188,10 +190,10 @@ func remove_idle_controllers() -> void:
 	for session_id in to_remove:
 		remove_controller(session_id)
 
-## Returns true of the controller was transfered from another client
+## Returns true of the controller was transferred from another client
 func assign_client_to_controller(peer_id: int, session_id: int) -> void:
 	var controller := get_controller(session_id)
-	assert(controller, str('Cannot assign controller to client. Could not find controller with session id #',session_id,'.'))
+	assert(controller, str('[Remote] Cannot assign controller to client. A controller with session id #',session_id,' does not exist.'))
 
 	var old_peer_id := controller.peer_id
 
@@ -203,9 +205,10 @@ func assign_client_to_controller(peer_id: int, session_id: int) -> void:
 			var old_client: Client = _clients[old_peer_id]
 			old_client.is_assigned = false
 			old_client.assignment_changed.emit(false)
-			kick_client(old_peer_id, 'Someone else took over this controller.')
+			kick_client(old_peer_id, 'Someone took over this controller you were using.')
 	
 	var new_client: Client = _clients[peer_id]
+	new_client.session_id = session_id
 	new_client.is_assigned = true
 	controller.is_connected = true
 	new_client.assignment_changed.emit(true)
@@ -272,11 +275,8 @@ func _on_receive_name(peer_id: int, username: String) -> void:
 	controller.username_changed.emit(username)
 
 func _on_receive_session(peer_id: int, session_id: int) -> void:
-	var client := get_client(peer_id)
-	client.session_id = session_id
-
 	if not _controllers.has(session_id):
-		print('Adding a new controller for new client.')
+		print('[Remote] Adding a new controller for new client.')
 		add_controller(session_id)
 	
 	assign_client_to_controller(peer_id, session_id)

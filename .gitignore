@@ -1,8 +1,11 @@
 # Godot 4+ specific ignores
 .godot/
 
+# Godot extentions
+webrtc/
+
 # Web
 node_modules/
 
-# Custom
+# Misc
 docs/.obsidian/

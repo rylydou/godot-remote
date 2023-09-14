@@ -17,8 +17,7 @@ var extensions: PackedStringArray = ['html']
 ## A list of extensions that will be excluded if requested
 var exclude_extensions: PackedStringArray = []
 
-## A dictionary of regex find a replace for every request
-var page_regex: Dictionary
+var secrets: Dictionary = {}
 
 ## Creates an HttpFileRouter instance
 # #### Parameters
@@ -85,9 +84,13 @@ func _serve_file(file_path: String) -> PackedByteArray:
 	var file := FileAccess.open(file_path, FileAccess.READ)
 	var error := FileAccess.get_open_error()
 	if error:
-		content = ('Couldn\'t serve file, ERROR = %s' % error).to_ascii_buffer()
+		content = str('Can not serve file.\nError: ',error_string(error),'.').to_utf8_buffer()
 	else:
-		content = file.get_buffer(file.get_length())
+		var txt = file.get_as_text()
+		for secret_key in secrets:
+			var secret_value: String = secrets[secret_key]
+			txt = txt.replace(secret_key, secret_value)
+		content = txt.to_utf8_buffer()
 	file.close()
 	return content
 
