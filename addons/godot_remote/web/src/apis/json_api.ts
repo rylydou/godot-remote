@@ -1,4 +1,4 @@
-import { API, ref } from './api'
+import { API, ref } from '../api'
 
 export function json_api(send_packet: (data: any) => void): API {
 	function send_json(data: object): void {

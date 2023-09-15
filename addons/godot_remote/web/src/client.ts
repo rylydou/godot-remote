@@ -27,7 +27,6 @@ export interface Client {
 }
 
 export function create_client(create_api: ApiConstructor): Client {
-
 	const client = {
 		api: create_api((data) => client.send_packet(data)),
 
@@ -92,12 +91,13 @@ export function create_client(create_api: ApiConstructor): Client {
 			return
 		}
 
-		client.ws.onmessage = (event) => {
-			console.debug('[WebSocket] Message: ', event.data)
-			client.api.handle_packet(event.data)
+		switch (client.ws.readyState) {
+			case WebSocket.OPEN: opened(); break
+			case WebSocket.CLOSING:
+			case WebSocket.CLOSED: closed(); break
 		}
 
-		client.ws.onopen = (event) => {
+		function opened() {
 			console.log('[WebSocket] Opened')
 			client.status = 'Connected'
 			client.is_connected = true
@@ -107,12 +107,21 @@ export function create_client(create_api: ApiConstructor): Client {
 			client.api.send_session(client.session_id)
 		}
 
-		client.ws.onclose = (event) => {
-			console.log('[WebSocket] Closed: ', { code: event.code, reason: event.reason, was_clean: event.wasClean })
+		function closed() {
 			client.status = 'Disconnected'
 			client.is_connected = false
 			if (client.on_status_change)
 				client.on_status_change()
+		}
+
+		client.ws.onopen = opened
+		client.ws.onclose = (event) => {
+			console.log('[WebSocket] Closed: ', { code: event.code, reason: event.reason, was_clean: event.wasClean })
+			closed()
+		}
+		client.ws.onmessage = (event) => {
+			console.debug('[WebSocket] Message: ', event.data)
+			client.api.handle_packet(event.data)
 		}
 
 		client.ws.onerror = (event) => {

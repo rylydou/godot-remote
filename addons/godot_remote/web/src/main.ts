@@ -5,7 +5,7 @@ import { Control } from './control'
 import { create_button } from './controls/button'
 import { create_joystick } from './controls/joystick'
 import { create_menu_button } from './controls/menu_button'
-import { json_api } from './json_api'
+import { json_api } from './apis/json_api'
 
 const api = json_api
 const client = create_client(api)
@@ -44,7 +44,8 @@ setInterval(() => {
 	if (!client.is_connected) return
 
 	for (const control of controls) {
-		control.sync(false)
+		if (control.sync)
+			control.sync(false)
 	}
 }, 1000 / AUTO_SYNC_RATE)
 
@@ -140,13 +141,9 @@ function pointer_down(x: number, y: number, id: number) {
 function pointer_move(x: number, y: number, id: number) {
 	[x, y] = transform_point(x, y)
 
-
-	if (is_menu_open) {
-	} else {
-		for (const control of controls) {
-			if (control.move)
-				control.move(x, y, id)
-		}
+	for (const control of controls) {
+		if (control.move)
+			control.move(x, y, id)
 	}
 
 	render()
@@ -155,12 +152,9 @@ function pointer_move(x: number, y: number, id: number) {
 function pointer_up(x: number, y: number, id: number) {
 	[x, y] = transform_point(x, y)
 
-	if (is_menu_open) {
-	} else {
-		for (const control of controls) {
-			if (control.up)
-				control.up(x, y, id)
-		}
+	for (const control of controls) {
+		if (control.up)
+			control.up(x, y, id)
 	}
 
 	render()

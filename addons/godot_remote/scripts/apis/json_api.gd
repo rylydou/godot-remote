@@ -1,6 +1,7 @@
 extends 'res://addons/godot_remote/scripts/types/api.gd'
 
 func handle_packet(peer_id: int, data: Variant) -> void:
+	# prints(peer_id, data)
 	if typeof(data) != TYPE_STRING: return
 	var text := data as String
 	

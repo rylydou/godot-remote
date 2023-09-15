@@ -118,7 +118,7 @@ export function create_joystick(client: Client, id: string, options?: JoystickOp
 			ctx.ellipse(stick_x * radius, stick_y * radius, handle_radius, handle_radius, 0, 0, 7)
 			ctx.fill()
 
-			// Sync debug
+			// Debug
 			// ctx.beginPath()
 			// ctx.ellipse(synced_x * radius, synced_y * radius, handle_radius * .5, handle_radius * .5, 0, 0, 7)
 			// ctx.save()
