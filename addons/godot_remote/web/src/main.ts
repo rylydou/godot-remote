@@ -5,12 +5,13 @@ import { Control } from './control'
 import { create_button } from './controls/button'
 import { create_joystick } from './controls/joystick'
 import { create_menu_button } from './controls/menu_button'
-import { json_api } from './apis/json_api'
+import { create_json_api } from './apis/json_api'
+import { create_websocket_driver } from './drivers/websocket_driver'
 
-const api = json_api
+const driver = create_websocket_driver()
+const api = create_json_api(driver)
 const client = create_client(api)
-client.on_status_change = render
-client.connect(`ws://${window.location.hostname}:8081`)
+client.api.driver.on_status_change = render
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
 const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
@@ -91,7 +92,7 @@ function render() {
 }
 
 function render_status(): void {
-	let text = client.status
+	let text = client.api.driver.get_status()
 	if (client.is_connected) {
 		text = `${Math.round(client.last_ping)}ms (${Math.round(client.get_avg_ping())}ms)`
 		ctx.globalAlpha = 0.25
@@ -178,5 +179,6 @@ window.addEventListener('pointermove', (ev) => {
 canvas.addEventListener('touchstart', (ev) => ev.preventDefault())
 // canvas.addEventListener('touchmove', (ev) =>ev.preventDefault())
 
-is_menu_open = true
-update_menu()
+// is_menu_open = true
+// update_menu()
+client.connect(`ws://${window.location.hostname}:8081`)

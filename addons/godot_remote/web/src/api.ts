@@ -1,12 +1,9 @@
+import { Driver } from './driver'
+
 export type ref = number | string
 
-
-export type ApiPacketSender = (data: any) => void
-export type ApiConstructor = (send_packet: ApiPacketSender) => API
-
 export interface API {
-	readonly send_packet: (data: any) => void
-	readonly handle_packet: (data: any) => void
+	readonly driver: Driver
 
 	receive_ping: (sts: number) => void
 	receive_pong: (sts: number, rts: number) => void

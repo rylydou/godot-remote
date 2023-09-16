@@ -1,10 +1,5 @@
-# This script uses a modified script from
-# https://github.com/godotengine/godot-demo-projects/blob/e9f0f75c5ba0fe81197b35f31c73e09a70be5054/networking/websocket_chat/websocket/WebSocketServer.gd
-class_name WebSocketServer extends Node
-
-signal message_received(peer_id: int, message: Variant)
-signal client_connected(peer_id: int)
-signal client_disconnected(peer_id: int)
+# Based from: https://github.com/godotengine/godot-demo-projects/blob/e9f0f75c5ba0fe81197b35f31c73e09a70be5054/networking/websocket_chat/websocket/WebSocketServer.gd
+extends 'res://addons/godot_remote/scripts/types/driver.gd'
 
 @export var handshake_headers: PackedStringArray = []
 @export var supported_protocols: PackedStringArray = []
@@ -30,14 +25,9 @@ class PendingPeer:
 
 var tcp_server := TCPServer.new()
 var pending_peers: Array[PendingPeer] = []
-var peers: Dictionary
-
-func _init() -> void:
-	set_process(false)
+var peers: Dictionary = {}
 
 func start(port: int) -> int:
-	set_process(true)
-	
 	if tcp_server.is_listening():
 		tcp_server.stop()
 	
@@ -47,8 +37,6 @@ func stop():
 	tcp_server.stop()
 	pending_peers.clear()
 	peers.clear()
-	
-	set_process(false)
 
 ## positive = send to only one peer, zero = brodcast to all peers, negative = send to all but one
 func send(peer_id: int, message: Variant) -> int:
@@ -85,7 +73,7 @@ func has_message(peer_id: int) -> bool:
 	return peers[peer_id].get_available_packet_count() > 0
 
 func _create_peer() -> WebSocketPeer:
-	var ws = WebSocketPeer.new()
+	var ws := WebSocketPeer.new()
 	ws.supported_protocols = supported_protocols
 	ws.handshake_headers = handshake_headers
 	return ws
@@ -131,7 +119,7 @@ func _connect_pending(p: PendingPeer) -> bool:
 		p.ws.poll()
 		var state = p.ws.get_ready_state()
 		if state == WebSocketPeer.STATE_OPEN:
-			var id = randi_range(2, 1 << 30)
+			var id = new_peer_id()
 			peers[id] = p.ws
 			client_connected.emit(id)
 			return true # Success.
@@ -161,11 +149,8 @@ func _connect_pending(p: PendingPeer) -> bool:
 			return true # Failure.
 		return false
 
-func close_socket(peer_id: int, code := 1000, reason := '') -> void:
+func disconnect_peer(peer_id: int, reason: String = '') -> void:
 	var socket: WebSocketPeer = peers[peer_id]
-	socket.close(code, reason)
+	socket.close(1000, reason)
 	peers.erase(peer_id)
 	client_disconnected.emit(peer_id)
-
-func _process(_delta):
-	poll()

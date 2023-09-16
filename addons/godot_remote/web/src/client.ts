@@ -1,4 +1,4 @@
-import { API, ApiConstructor } from './api'
+import { API } from './api'
 import { SESSION_STORAGE_KEY } from './consts'
 
 export interface Client {
@@ -6,10 +6,9 @@ export interface Client {
 
 	readonly send_packet: (data: any) => void
 
-	ws: WebSocket | null
-	ws_address: string
+	reconnect_address: string
 	auto_reconnect: boolean
-	readonly connect: (ws_address: string) => void
+	readonly connect: (address: string) => void
 	is_connected: boolean
 	status: string
 	on_status_change?: () => void
@@ -26,30 +25,18 @@ export interface Client {
 	ping_server: () => void
 }
 
-export function create_client(create_api: ApiConstructor): Client {
+export function create_client(api: API): Client {
 	const client = {
-		api: create_api((data) => client.send_packet(data)),
+		api: api,
 
-		send_packet(data) {
-			if (!client.ws) return
-			client.ws.send(data)
-		},
-
-		ws: null,
-		ws_address: '',
+		reconnect_address: '',
 		auto_reconnect: true,
 		is_connected: false,
 		status: 'Connecting...',
-		connect(ws_address) {
-			if (client.ws && client.ws.readyState != 3) {
-				// TODO: WEBSOCKET ERROR CODES
-				client.ws.close(1000, 'Automatic close due to error.')
-			}
-			client.ws_address = ws_address
-			client.ws = new WebSocket(ws_address)
-			listen()
+		connect(address) {
+			client.reconnect_address = address
+			api.driver.connect(address)
 		},
-		on_status_change: () => { },
 
 		session_id: 0,
 
@@ -85,56 +72,18 @@ export function create_client(create_api: ApiConstructor): Client {
 		client.ping_count++
 	}
 
-	function listen() {
-		if (!client.ws) {
-			console.error('[Websocket] Cannot listen to WebSocket client. One has not been made made.')
-			return
-		}
+	client.api.driver.on_open = () => {
+		console.log('[Client] Connecting. Sending session id.')
+		api.send_session(client.session_id)
+		client.is_connected = true
+	}
 
-		switch (client.ws.readyState) {
-			case WebSocket.OPEN: opened(); break
-			case WebSocket.CLOSING:
-			case WebSocket.CLOSED: closed(); break
-		}
+	client.api.driver.on_close = () => {
+		client.is_connected = false
 
-		function opened() {
-			console.log('[WebSocket] Opened')
-			client.status = 'Connected'
-			client.is_connected = true
-			if (client.on_status_change)
-				client.on_status_change()
-
-			client.api.send_session(client.session_id)
-		}
-
-		function closed() {
-			client.status = 'Disconnected'
-			client.is_connected = false
-			if (client.on_status_change)
-				client.on_status_change()
-		}
-
-		client.ws.onopen = opened
-		client.ws.onclose = (event) => {
-			console.log('[WebSocket] Closed: ', { code: event.code, reason: event.reason, was_clean: event.wasClean })
-			closed()
-		}
-		client.ws.onmessage = (event) => {
-			console.debug('[WebSocket] Message: ', event.data)
-			client.api.handle_packet(event.data)
-		}
-
-		client.ws.onerror = (event) => {
-			console.error('[WebSocket] Error: ', event)
-			client.status = 'Error: ' + event.toString()
-			client.is_connected = false
-
-			if (client.on_status_change)
-				client.on_status_change()
-
-			if (client.auto_reconnect) {
-				client.connect(client.ws_address)
-			}
+		if (client.auto_reconnect) {
+			console.log('[Client] Auto reconnecting due to disconnect.')
+			client.api.driver.connect(client.reconnect_address)
 		}
 	}
 

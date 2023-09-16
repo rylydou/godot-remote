@@ -7,4 +7,8 @@ export interface Driver {
 
 	on_message?: (message: any) => void
 	on_status_change?: () => void
+
+	on_open: () => void
+	on_close: () => void
+	on_error: (reason: any) => void
 }

@@ -3,12 +3,16 @@ class_name GodotRemote extends Node
 # Imports
 const Util = preload('res://addons/godot_remote/scripts/util.gd')
 const API = preload('res://addons/godot_remote/scripts/types/api.gd')
+const JsonAPI = preload('res://addons/godot_remote/scripts/apis/json_api.gd')
+const Driver = preload('res://addons/godot_remote/scripts/types/driver.gd')
+const WebSocketDriver = preload('res://addons/godot_remote/scripts/drivers/websocket_driver.gd')
+const WebRtcDriver = preload('res://addons/godot_remote/scripts/drivers/webrtc_driver.gd')
+
 const Client = preload('res://addons/godot_remote/scripts/types/client.gd')
 const Controller = preload('res://addons/godot_remote/scripts/types/controller.gd')
 const BtnInput = preload('res://addons/godot_remote/scripts/types/btn_input.gd')
 const AxisInput = preload('res://addons/godot_remote/scripts/types/axis_input.gd')
 const JoyInput = preload('res://addons/godot_remote/scripts/types/joy_input.gd')
-const JsonAPI = preload('res://addons/godot_remote/scripts/apis/json_api.gd')
 
 enum InputHandleMode {
 	Manual,
@@ -27,18 +31,17 @@ signal controller_removed(session_id: int)
 @export var input_handle_mode := InputHandleMode.Idle
 var api: API = JsonAPI.new()
 
-@export_group('Remote/HTTP Server', 'http_')
+@export_group('HTTP Server', 'http_')
 @export var http_server: HttpServer
 @export_dir var http_public_folder := 'res://addons/godot_remote/web/dist'
 var http_server_port: int
 var http_server_address: String
 var http_file_router: HttpFileRouter
 
-@export_group('Websocket Server', 'ws_')
-@export var ws_server: WebSocketServer
-var ws_server_port: int
-var ws_server_address: String
-@export var ws_heartbeat_time := 1000
+@export_group('Driver', 'driver_')
+var driver: Driver = WebRtcDriver.new()
+var driver_port: int
+var driver_address: String
 
 ## Peer ID (int) to Client
 var _clients: Dictionary = {}
@@ -62,11 +65,11 @@ func _ready() -> void:
 	get_tree().process_frame.connect(start_servers, Node.CONNECT_ONE_SHOT)
 
 func _connect_signals() -> void:
-	ws_server.client_connected.connect(_on_client_connected)
-	ws_server.client_disconnected.connect(_on_client_disconnected)
-	ws_server.message_received.connect(api.handle_packet)
+	driver.client_connected.connect(_on_client_connected)
+	driver.client_disconnected.connect(_on_client_disconnected)
+	driver.message_received.connect(api.handle_packet)
 	
-	api.send_packet.connect(ws_server.send)
+	api.send_packet.connect(driver.send)
 	api.receive_ping.connect(_on_receive_ping)
 	api.receive_pong.connect(_on_receive_pong)
 	api.receive_input_btn.connect(_on_receive_input_btn)
@@ -79,7 +82,7 @@ func _connect_signals() -> void:
 func start_servers() -> void:
 	print('[Remote] Starting servers')
 	start_http_server(starting_port, max_port_retries)
-	start_ws_server(http_server_port, max_port_retries)
+	start_driver_server(http_server_port, max_port_retries)
 
 func start_http_server(port: int, max_retries: int) -> void:
 	http_server.stop()
@@ -96,24 +99,26 @@ func _update_http_address() -> void:
 	print('[Remote/HTTP] Server started at address: ',http_server_address)
 	http_address_changed.emit(http_server_address)
 
-func start_ws_server(port: int, max_retries: int) -> void:
-	ws_server.stop()
+func start_driver_server(port: int, max_retries: int) -> void:
+	driver.stop()
 	
-	print('[Remote/WebSocket] Finding an open port starting at: ',port)
-	ws_server_port = Util.find_open_port(port, max_retries, func(port: int): return ws_server.start(port))
-	if ws_server_port <= 0:
-		printerr('[Remote/WebSocket] Could not find an open port in ',max_retries,' tries.')
+	print('[Remote/Driver] Finding an open port starting at: ',port)
+	driver_port = Util.find_open_port(port, max_retries, func(port: int): return driver.start(port))
+	if driver_port <= 0:
+		printerr('[Remote/Driver] Could not find an open port in ',max_retries,' tries.')
 		return
-	_update_ws_address()
+	_update_driver_address()
 
-func _update_ws_address() -> void:
-	ws_server_address = str('http://',ip_address,':',ws_server_port)
-	print('[Remote/WebSocket] Server started at address: ',ws_server_address)
-	http_file_router.secrets['__WS_ADDRESS__'] = ws_server_address
+func _update_driver_address() -> void:
+	driver_address = str('http://',ip_address,':',driver_port)
+	print('[Remote/Driver] Server started at address: ',driver_address)
+	http_file_router.secrets['__DRIVER_ADDRESS__'] = driver_address
 
 func _process(delta: float) -> void:
 	if input_handle_mode == InputHandleMode.Idle:
 		handle_all_inputs()
+	
+	driver.poll()
 
 func _physics_process(delta: float) -> void:
 	if input_handle_mode == InputHandleMode.Physics:
@@ -132,7 +137,7 @@ func get_client(peer_id: int) -> Client:
 	return _clients[peer_id]
 
 func kick_client(peer_id: int, reason: String) -> void:
-	ws_server.close_socket(peer_id, 1000, reason)
+	driver.close_socket(peer_id, 1000, reason)
 	_clients.erase(peer_id)
 
 func get_controller(session_id: int) -> Controller:

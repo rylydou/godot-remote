@@ -1,17 +1,15 @@
-[gd_scene load_steps=4 format=3 uid="uid://dmkr1j7fmmqyk"]
+[gd_scene load_steps=3 format=3 uid="uid://dmkr1j7fmmqyk"]
 
 [ext_resource type="Script" path="res://addons/godot_remote/scripts/godot_remote.gd" id="1_mlg1u"]
 [ext_resource type="Script" path="res://addons/godottpd/http_server.gd" id="2_7s16s"]
-[ext_resource type="Script" path="res://addons/godot_remote/scripts/servers/websocket_server.gd" id="3_vg04b"]
 
-[node name="Remote" type="Node" node_paths=PackedStringArray("http_server", "ws_server")]
+[node name="Remote" type="Node" node_paths=PackedStringArray("http_server")]
 script = ExtResource("1_mlg1u")
 http_server = NodePath("HttpServer")
-ws_server = NodePath("ControllerServer")
 
 [node name="HttpServer" type="Node" parent="."]
+process_thread_group = 2
+process_thread_group_order = 0
+process_thread_messages = 0
 script = ExtResource("2_7s16s")
 server_identifier = "Godot Remote Server"
-
-[node name="ControllerServer" type="Node" parent="."]
-script = ExtResource("3_vg04b")
