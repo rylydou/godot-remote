@@ -8,6 +8,7 @@ export interface JoystickOptions {
 	radius?: number
 	padding?: number
 	label?: string
+	high_precision?: boolean
 }
 
 export function create_joystick(client: Client, id: string, options?: JoystickOptions): Control {
@@ -18,6 +19,7 @@ export function create_joystick(client: Client, id: string, options?: JoystickOp
 	const handle_radius = 3
 	const handle_outline = .5
 	const label = options?.label || ''
+	const high_precision = options?.high_precision || false
 
 	const number_of_angles = 8
 	const steps_of_precision = 2
@@ -37,14 +39,21 @@ export function create_joystick(client: Client, id: string, options?: JoystickOp
 		sync(forced) {
 			if (!client.is_connected) return
 
-			let ang = angle(stick_x, stick_y)
-			let len = length(stick_x, stick_y)
+			let x = stick_x
+			let y = stick_y
 
-			const angles_of_precision = number_of_angles / (2 * Math.PI)
-			ang = Math.round(ang * angles_of_precision) / angles_of_precision
-			len = Math.round(len * steps_of_precision) / steps_of_precision
+			if (!high_precision) {
+				let ang = angle(stick_x, stick_y)
+				let len = length(stick_x, stick_y)
 
-			let [x, y] = from_angle(ang, len)
+				const angles_of_precision = number_of_angles / (2 * Math.PI)
+				ang = Math.round(ang * angles_of_precision) / angles_of_precision
+				len = Math.round(len * steps_of_precision) / steps_of_precision
+
+				const vec = from_angle(ang, len)
+				x = vec[0]
+				y = vec[1]
+			}
 
 			if (!forced) {
 				if (x == synced_x && y == synced_y) return

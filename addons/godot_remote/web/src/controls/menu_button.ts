@@ -5,11 +5,13 @@ import { distance_sqr } from '../vec'
 export interface MenuButtonOptions {
 	center_x?: number
 	center_y?: number
+	icon?: string
 }
 
-export function create_menu_button(client: Client, on_press: () => void, options?: MenuButtonOptions): Control {
+export function create_icon_button(client: Client, on_press: () => void, options?: MenuButtonOptions): Control {
 	const center_x = options?.center_x || 0
 	const center_y = options?.center_y || 0
+	const icon = options?.icon || 'none'
 
 	let pointer_id = 0
 	let is_active = false
@@ -40,15 +42,44 @@ export function create_menu_button(client: Client, on_press: () => void, options
 				ctx.scale(.9, .9)
 			}
 
-			ctx.moveTo(-1, -.5)
-			ctx.lineTo(1, -.5)
-			ctx.moveTo(-1, 0)
-			ctx.lineTo(1, 0)
-			ctx.moveTo(-1, .5)
-			ctx.lineTo(1, .5)
+			// ctx.lineCap = 'round'
 
-			ctx.lineWidth = .25
-			ctx.stroke()
+			switch (icon) {
+				case 'none':
+					ctx.moveTo(-1.0, -1.0)
+					ctx.lineTo(+1.0, -1.0)
+					ctx.lineTo(+1.0, +1.0)
+					ctx.lineTo(-1.0, +1.0)
+					ctx.closePath()
+					ctx.lineTo(+1.0, +1.0)
+					ctx.lineWidth = .25
+					ctx.stroke()
+					break
+				case 'menu':
+					ctx.moveTo(-1.0, -0.5)
+					ctx.lineTo(+1.0, -0.5)
+					ctx.moveTo(-1.0, +0.0)
+					ctx.lineTo(+1.0, +0.0)
+					ctx.moveTo(-1.0, +0.5)
+					ctx.lineTo(+1.0, +0.5)
+					ctx.lineWidth = .25
+					ctx.stroke()
+					break
+				case 'pause':
+					ctx.moveTo(-1.0, +0.0)
+					ctx.lineTo(+1.0, +0.0)
+					ctx.moveTo(+0.0, -1.0)
+					ctx.lineTo(+0.0, +1.0)
+
+					ctx.lineWidth = .25
+					// ctx.moveTo(-0.5, -1.0)
+					// ctx.lineTo(-0.5, +1.0)
+					// ctx.moveTo(+0.5, -1.0)
+					// ctx.lineTo(+0.5, +1.0)
+					// ctx.lineWidth = .5
+					ctx.stroke()
+					break
+			}
 		},
 	} as Control
 

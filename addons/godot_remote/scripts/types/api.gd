@@ -1,6 +1,7 @@
 extends RefCounted
 
-signal send_packet(peer_id: int, data: Variant)
+signal send_reliable(peer_id: int, data: Variant)
+signal send_unreliable(peer_id: int, data: Variant)
 
 func handle_packet(peer_id: int, data: Variant) -> void:
 	pass

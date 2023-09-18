@@ -131,6 +131,7 @@ func _perform_current_request(client: StreamPeer, request: HttpRequest):
 	for router in self._routers:
 		var matches = router.path.search(request.path)
 		if matches:
+			# print('[HTTP] Using: ', router.router.type)
 			request.query_match = matches
 			if request.query_match.get_string("subpath"):
 				request.path = request.query_match.get_string("subpath")
@@ -159,6 +160,7 @@ func _perform_current_request(client: StreamPeer, request: HttpRequest):
 				"OPTIONS":
 					found = true
 					router.router.handle_options(request, response)
+			break
 	if not found:
 		response.send(404, "Not found")
 

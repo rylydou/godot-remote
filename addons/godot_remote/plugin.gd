@@ -1,11 +1,11 @@
 @tool
 extends EditorPlugin
 
-const AUTOLOAD_NAME = 'Remote'
-const AUTOLOAD_PATH = 'res://addons/godot_remote/scenes/autoloads/remote.tscn'
-const GITHUB_RELEASES_LINK = 'https://github.com/rylydou/godot-remote/releases'
-const COMPAT_MAJOR = 4
-const COMPAT_MINOR = 1
+const CONFIG := preload('res://addons/godot_remote/config.gd')
+const AUTOLOAD_PATH := 'res://addons/godot_remote/scenes/autoloads/remote.tscn'
+const GITHUB_RELEASES_LINK := 'https://github.com/rylydou/godot-remote/releases'
+const COMPAT_MAJOR := 4
+const COMPAT_MINOR := 1
 
 func _enter_tree():
 	var major: int = Engine.get_version_info().major
@@ -14,19 +14,19 @@ func _enter_tree():
 	var check_loose := major == COMPAT_MAJOR && minor >= COMPAT_MINOR
 	
 	if not check_strict:
-		var txt = str('[GodotRemote] This plugin is made for Godot ',major,'.',minor,'. The plugin might not work properly.\n')
+		var txt = str('[GodotRemote] This plugin is made for Godot ',major,'.',minor,' but you are running ',Engine.get_version_info().string,'. The plugin might not work properly.\n')
 		if major > COMPAT_MAJOR or minor > COMPAT_MINOR:
-			txt += 'Get updates for the plugin at: '
+			txt += 'Get updates for the plugin at: \n'
 		else:
-			txt += str('Try looking for a version compatible with this Godot version (',Engine.get_version_info().string,') at: ')
-		txt += GITHUB_RELEASES_LINK + '.'
+			txt += str('Try looking for a version compatible with this Godot version (',Engine.get_version_info().string,') at: \n')
+		txt += str(GITHUB_RELEASES_LINK,'.')
 		
 		if check_loose:
 			push_warning(txt)
 		else:
 			printerr(txt)
 	
-	add_autoload_singleton(AUTOLOAD_NAME, AUTOLOAD_PATH)
+	add_autoload_singleton(CONFIG.autoload_name, AUTOLOAD_PATH)
 
 func _exit_tree():
-	remove_autoload_singleton(AUTOLOAD_NAME)
+	remove_autoload_singleton(CONFIG.autoload_name)

@@ -1,6 +1,6 @@
 export interface Driver {
-	readonly connect: (address: string) => void
-	readonly disconnect: () => void
+	readonly connect: (address: string) => Promise<void>
+	readonly disconnect: () => Promise<void>
 	readonly send_reliable: (message: any) => void
 	readonly send_unreliable: (message: any) => void
 	readonly get_status: () => string

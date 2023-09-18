@@ -1,0 +1,97 @@
+* {
+  box-sizing: border-box;
+  margin: unset;
+  padding: unset;
+  border: unset;
+  background: unset;
+  color: unset;
+  font: unset;
+  text-align: unset;
+}
+
+html,
+body {
+  user-select: none;
+  max-width: 100dvw;
+  max-height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  background-color: black;
+  color: white;
+  font-family: "Bespoke Sans", sans-serif;
+}
+
+canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: black;
+  transition: filter 100ms;
+}
+
+canvas.open {
+  filter: opacity(0.25) blur(8px);
+  transition: filter 200ms;
+}
+
+#menu {
+  position: fixed;
+  inset: 0;
+  right: 50%;
+  display: flex;
+  flex-direction: column;
+  min-width: min(100vh, 100vw);
+  max-width: 100vw;
+  overflow-y: scroll;
+  overflow-x: none;
+  background-color: white;
+  color: black;
+  visibility: hidden;
+  translate: -100% 0%;
+  transition: translate 100ms linear, visibility 0ms 100ms;
+}
+
+#menu.open {
+  visibility: visible;
+  translate: 0% 0%;
+  transition: translate 200ms ease-out;
+}
+
+#menu > * {
+  display: flex;
+  justify-content: space-between;
+  align-items: left;
+  gap: 1rem;
+  min-height: 2rem;
+  padding: 1rem 2rem;
+}
+
+#menu > :not(:last-child) {
+  border-bottom: solid 1px lightgray;
+}
+
+#menu h1 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-family: "Bespoke Sans", sans-serif;
+  font-weight: 900;
+}
+
+#menu #menu-close {
+  width: 2rem;
+  height: 2rem;
+}
+
+#menu > button {
+  cursor: pointer;
+  font-family: "Bespoke Sans", sans-serif;
+  font-weight: bold;
+}
+
+#menu > button > :last-child {
+  opacity: 0.5;
+  font-family: sans-serif;
+  font-weight: normal;
+}

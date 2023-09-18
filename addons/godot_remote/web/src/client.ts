@@ -45,7 +45,7 @@ export function create_client(api: API): Client {
 		last_ping: 0,
 		ping_sum: 0,
 		ping_count: 0,
-		get_avg_ping: () => client.ping_sum / Math.max(client.ping_count, 1),
+		get_avg_ping: () => Math.max(client.ping_sum / client.ping_count, 0),
 
 		ping_server() {
 			client.ongoing_pings++
@@ -57,6 +57,7 @@ export function create_client(api: API): Client {
 	const new_session_id = Math.floor(Math.random() * 100_000)
 	client.session_id = Number(sessionStorage.getItem(SESSION_STORAGE_KEY) || new_session_id)
 	sessionStorage.setItem(SESSION_STORAGE_KEY, client.session_id.toString())
+	document.getElementById('menu_session_id')!.textContent = '#' + client.session_id
 
 	client.api.receive_ping = (sts) => {
 		client.api.send_pong(sts, Date.now())
@@ -73,9 +74,15 @@ export function create_client(api: API): Client {
 	}
 
 	client.api.driver.on_open = () => {
-		console.log('[Client] Connecting. Sending session id.')
-		api.send_session(client.session_id)
+		console.log('[Client] Connected.')
 		client.is_connected = true
+		client.ping_count = 0
+		client.ping_sum = 0
+		client.ongoing_pings = 0
+		client.last_ping = 0
+		client.last_pong_timestamp = 0
+
+		api.send_session(client.session_id)
 	}
 
 	client.api.driver.on_close = () => {

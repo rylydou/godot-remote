@@ -1,9 +1,9 @@
 import { Driver } from '../driver'
 
-export function create_websocket_driver(): Driver {
+export default function create_driver(): Driver {
 	let ws: WebSocket | null = null
 	const driver = {
-		connect(address) {
+		async connect(address) {
 			console.log('[WebSocket] Address', address)
 			ws = new WebSocket(address)
 			ws.onmessage = (event) => {
@@ -24,7 +24,7 @@ export function create_websocket_driver(): Driver {
 				if (driver.on_status_change) driver.on_status_change()
 			}
 			ws.onerror = (event) => {
-				console.error('[WebSocket] Error: ', event)
+				// console.error('[WebSocket] Error: ', event)
 				driver.disconnect()
 
 				if (driver.on_error) driver.on_error(event)
@@ -33,19 +33,19 @@ export function create_websocket_driver(): Driver {
 			if (driver.on_status_change)
 				driver.on_status_change()
 		},
-		disconnect() {
+		async disconnect() {
 			ws?.close()
 			if (driver.on_status_change) driver.on_status_change()
 		},
 		get_status() {
-			if (!ws) return 'uninitialized'
+			if (!ws) return 'Initializing...'
 			switch (ws.readyState) {
-				case WebSocket.CONNECTING: return 'connecting'
-				case WebSocket.OPEN: return 'open'
-				case WebSocket.CLOSED: return 'closed'
-				case WebSocket.CLOSING: return 'closing'
+				case WebSocket.CONNECTING: return 'Connecting...'
+				case WebSocket.OPEN: return 'Connected'
+				case WebSocket.CLOSED: return 'Disconnected'
+				case WebSocket.CLOSING: return 'Disconnecting...'
 			}
-			return 'initialized'
+			return 'Initialized'
 		},
 
 		send_reliable(message) {

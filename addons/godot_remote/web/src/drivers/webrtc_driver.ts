@@ -1,86 +1,97 @@
 import { Driver } from '../driver'
 
-export function create_webrtc_driver(): Driver {
-	let local: RTCPeerConnection | null = null
-	let remote: RTCPeerConnection | null = null
+export default function create_driver(): Driver {
+	let peer: RTCPeerConnection | null = null
 
-	let send_reliable_channel: RTCDataChannel | null = null
-	let send_unreliable_channel: RTCDataChannel | null = null
-	let receive_channel: RTCDataChannel | null = null
+	let reliable_channel: RTCDataChannel | null = null
+	let unreliable_channel: RTCDataChannel | null = null
 
-	function candidate_error(reason: any) {
-		console.error('[WebRTC] Candidate error. Reason: ', reason)
-	}
-
-	function description_error(reason: any) {
-		console.error('[WebRTC] Description error. Reason: ', reason)
-	}
+	let peer_id: number
 
 	const driver = {
-		connect(address) {
+		async connect(address) {
 			console.log('[WebRTC] Connecting to ', address)
 
-			local = new RTCPeerConnection({})
-			send_reliable_channel = local.createDataChannel('reliable', { negotiated: true, id: 1 })
-			send_reliable_channel.onopen = () => console.log('[WebRTC] Reliable channel opened.')
-			send_reliable_channel.onclose = () => console.log('[WebRTC] Reliable channel closed.')
-			send_unreliable_channel = local.createDataChannel('unreliable', { negotiated: true, id: 2, maxRetransmits: 0, ordered: false, })
-			send_unreliable_channel.onopen = () => console.log('[WebRTC] Unreliable channel opened.')
-			send_unreliable_channel.onclose = () => console.log('[WebRTC] Unreliable channel closed.')
+			peer = new RTCPeerConnection({ iceServers: [{ "urls": ["stun:stun.l.google.com:19302"], username: 'Billy' }] })
 
-			remote = new RTCPeerConnection({})
-			receive_channel = remote.createDataChannel('reliable', { negotiated: true, id: 1 })
+			peer.onconnectionstatechange = () => { if (driver.on_status_change) driver.on_status_change() }
+			peer.oniceconnectionstatechange = () => { if (driver.on_status_change) driver.on_status_change() }
+			peer.onicegatheringstatechange = () => { if (driver.on_status_change) driver.on_status_change() }
+			peer.onsignalingstatechange = () => { if (driver.on_status_change) driver.on_status_change() }
+			peer.onnegotiationneeded = () => { console.log('Negotiation needed.') }
+			peer.onicecandidateerror = () => { console.error('Ice candidate error.') }
 
-			local.onicecandidate = (e) =>
-				!e.candidate ||
-				remote!.addIceCandidate(e.candidate).catch(candidate_error)
+			peer.onicecandidate = async (event) => {
+				await new Promise(r => setTimeout(r, 3000))
+				console.log('[WebRTC] My candidate: ', event.candidate)
+				if (!peer_id) {
+					console.log('[WebRTC] peer_id is undefined. Returning')
+					return
+				}
+				const ice_response = await fetch('/webrtc/ice', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						peer_id: peer_id,
+						candidate: event.candidate,
+					}),
+				})
+				if (!ice_response.ok) return
+				const answer = await ice_response.json()
+				console.log('[WebRTC] Ice response: ', answer)
+			}
 
-			remote.onicecandidate = (e) =>
-				!e.candidate ||
-				remote!.addIceCandidate(e.candidate).catch(candidate_error)
+			console.log('[WebRTC] Creating data channels.')
+			reliable_channel = peer.createDataChannel('reliable', { negotiated: true, id: 1 })
+			reliable_channel.onopen = () => console.log('[WebRTC] Reliable channel opened.')
+			reliable_channel.onclose = () => console.log('[WebRTC] Reliable channel closed.')
+			reliable_channel.onerror = (ev) => console.log('[WebRTC] Reliable channel error: ', ev)
 
-			local.createOffer()
-				.then(offer => {
-					console.log('[WebRTC] Setting local description to offer.')
-					return local!.setLocalDescription(offer)
-				})
-				.then(() => {
-					console.log('[WebRTC] Setting remote description to local description.')
-					return remote!.setRemoteDescription(local!.localDescription!)
-				})
-				.then(() => {
-					console.log('[WebRTC] Creating answer on remote.')
-					return remote!.createAnswer()
-				})
-				.then(answer => {
-					console.log('[WebRTC] Setting remote description to answer.')
-					return remote!.setLocalDescription(answer)
-				})
-				.then(() => {
-					console.log('[WebRTC] Setting local description to remote description.')
-					return local!.setRemoteDescription(remote!.localDescription!)
-				})
-				.catch(description_error)
+			unreliable_channel = peer.createDataChannel('unreliable', { negotiated: true, id: 2, maxRetransmits: 0, ordered: false, })
+			unreliable_channel.onopen = () => console.log('[WebRTC] Unreliable channel opened.')
+			unreliable_channel.onclose = () => console.log('[WebRTC] Unreliable channel closed.')
+			unreliable_channel.onerror = (ev) => console.log('[WebRTC] Unreliable channel error: ', ev)
+
+			console.log('[WebRTC] Creating offer.')
+			const local_offer = await peer.createOffer()
+
+			console.log('[WebRTC] Setting local description to offer.')
+			await peer!.setLocalDescription(local_offer)
+
+			console.log('[WebRTC] Sending offer and awaiting answer.')
+			const answer_response = await fetch('/webrtc/offer', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(local_offer),
+			})
+			if (!answer_response.ok) return
+
+			const answer = await answer_response.json()
+			peer_id = answer.peer_id
+			console.log('answer peer id: ', peer_id)
+
+			console.log('[WebRTC] Setting remote description to answer.')
+			await peer.setRemoteDescription({ type: answer.type, sdp: answer.sdp })
 		},
-		disconnect() {
+		async disconnect() {
 			console.log('[WebRTC] Disconnecting.')
-			send_reliable_channel?.close()
-			send_unreliable_channel?.close()
-			receive_channel?.close()
-			local?.close()
-			remote?.close()
+			reliable_channel?.close()
+			unreliable_channel?.close()
+			peer?.close()
 
-			send_reliable_channel = null
-			send_unreliable_channel = null
-			receive_channel = null
-			local = null
-			remote = null
+			reliable_channel = null
+			unreliable_channel = null
+			peer = null
 		},
 		send_reliable(message) {
-			send_reliable_channel?.send(message)
+			reliable_channel?.send(message)
 		},
 		send_unreliable(message) {
-			send_unreliable_channel?.send(message)
+			unreliable_channel?.send(message)
+		},
+		get_status() {
+			if (!peer) return 'uninitialized'
+			return `peer(${peer.connectionState} ${peer.signalingState}) ice(${peer.iceConnectionState} gather:${peer.iceGatheringState})`
 		},
 	} as Driver
 	return driver

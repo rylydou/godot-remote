@@ -3,8 +3,9 @@ import { viteSingleFile } from "vite-plugin-singlefile"
 import { minify_html } from './vite/html_minify'
 
 export default defineConfig({
-	plugins: [viteSingleFile({ removeViteModuleLoader: true }), minify_html()],
+	// plugins: [viteSingleFile({ removeViteModuleLoader: true }), minify_html()],
 	build: {
+		minify: false,
 		rollupOptions: {
 			output: {
 				entryFileNames: `[name].js`,

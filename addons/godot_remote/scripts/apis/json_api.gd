@@ -70,17 +70,20 @@ func _handle_joy_input(peer_id: int, dict: Dictionary, id: String) -> void:
 
 # ---------------------------------------------------------------------------- #
 
-func send_json(peer_id: int, data: Variant) -> void:
-	send_packet.emit(peer_id, JSON.stringify(data))
+func send_json_reliable(peer_id: int, data: Variant) -> void:
+	send_reliable.emit(peer_id, JSON.stringify(data))
+
+func send_json_unreliable(peer_id: int, data: Variant) -> void:
+	send_unreliable.emit(peer_id, JSON.stringify(data))
 
 func send_ping(peer_id: int, sts: int) -> void:
-	send_json(peer_id, {
+	send_json_reliable(peer_id, {
 		'_': 'ping',
 		'sts': sts,
 	})
 
 func send_pong(peer_id: int, sts: int, rts: int) -> void:
-	send_json(peer_id, {
+	send_json_reliable(peer_id, {
 		'_': 'pong',
 		'sts': sts,
 		'rts': rts,

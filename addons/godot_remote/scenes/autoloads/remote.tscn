@@ -8,8 +8,5 @@ script = ExtResource("1_mlg1u")
 http_server = NodePath("HttpServer")
 
 [node name="HttpServer" type="Node" parent="."]
-process_thread_group = 2
-process_thread_group_order = 0
-process_thread_messages = 0
 script = ExtResource("2_7s16s")
 server_identifier = "Godot Remote Server"
