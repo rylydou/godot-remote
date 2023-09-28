@@ -28,7 +28,7 @@ var pending_peers: Array[PendingPeer] = []
 var peers: Dictionary = {}
 
 func build_http(http_server: HttpServer, file_router: HttpFileRouter) -> void:
-	file_router.secrets['$_DRIVER_$'] = 'WebSocket'
+	file_router.secrets['$_DRIVER_$'] = 'WS'
 
 func start(port: int) -> int:
 	if tcp_server.is_listening():
@@ -42,7 +42,7 @@ func stop():
 	peers.clear()
 
 func send_reliable(peer_id: int, message: Variant) -> int:
-	assert(peers.has(peer_id), str('[WebSocket] Cannot send packed. A peer with peer_id #',peer_id,' does not exist.'))
+	assert(peers.has(peer_id), str('[WS] Cannot send packed. A peer with peer_id #',peer_id,' does not exist.'))
 	var ws = peers[peer_id]
 	
 	if typeof(message) == TYPE_STRING:
@@ -53,7 +53,7 @@ func send_unreliable(peer_id: int, message: Variant) -> int:
 	return send_reliable(peer_id, message)
 
 func get_message(peer_id: int) -> Variant:
-	assert(peers.has(peer_id), str('[WebSocket] Cannot get message. A peer with peer_id #',peer_id,' does not exist.'))
+	assert(peers.has(peer_id), str('[WS] Cannot get message. A peer with peer_id #',peer_id,' does not exist.'))
 	var ws = peers[peer_id]
 	
 	if ws.get_available_packet_count() <= 0: return null
@@ -64,7 +64,7 @@ func get_message(peer_id: int) -> Variant:
 	return packet
 
 func has_message(peer_id: int) -> bool:
-	assert(peers.has(peer_id), str('[WebSocket] Cannot get message. A peer with peer_id #',peer_id,' does not exist.'))
+	assert(peers.has(peer_id), str('[WS] Cannot get message. A peer with peer_id #',peer_id,' does not exist.'))
 	return peers[peer_id].get_available_packet_count() > 0
 
 func _create_peer() -> WebSocketPeer:

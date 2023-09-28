@@ -1,7 +1,7 @@
-import { Client } from './client'
+import { Remote } from './remote'
 
 export interface Control {
-	client: Client
+	remote: Remote
 
 	readonly sync: (forced: boolean) => void
 

@@ -1,4 +1,4 @@
-import { Client } from '../client'
+import { Remote } from '../remote'
 import { Control } from '../control'
 import { distance_sqr } from '../vec'
 
@@ -9,7 +9,7 @@ export interface ButtonOptions {
 	radius?: number
 }
 
-export function create_button(client: Client, id: string, options?: ButtonOptions): Control {
+export function create_button(remote: Remote, id: string, options?: ButtonOptions): Control {
 	const label = options?.label || ''
 	const center_x = options?.center_x || 0
 	const center_y = options?.center_y || 0
@@ -22,15 +22,15 @@ export function create_button(client: Client, id: string, options?: ButtonOption
 	let synced_active = false
 
 	const button = {
-		client,
+		remote: remote,
 
 		sync(forced) {
-			if (!client.is_connected) return
+			if (!remote.driver.is_connected) return
 			if (!forced) {
 				if (synced_active == is_active) return
 			}
 			synced_active = is_active
-			client.api.send_input_btn(id, synced_active)
+			remote.driver.send_reliable(remote.protocol.input_btn(id, synced_active))
 		},
 
 		down(x, y, pid) {

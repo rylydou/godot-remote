@@ -1,35 +1,14 @@
 import { fill_canvas } from './canvas'
-import { create_client } from './client'
-import { AUTO_SYNC_RATE, PING_TIME, UNIT_SIZE } from './consts'
+import { create_remote } from './remote'
+import { AUTO_SYNC_RATE, UNIT_SIZE } from './consts'
 import { Control } from './control'
 import { create_button } from './controls/button'
 import { create_joystick } from './controls/joystick'
 import { create_icon_button } from './controls/menu_button'
-import { create_json_api } from './apis/json_api'
-import { Driver } from './driver'
 
 (async () => {
-	const driver_type: string = '$_DRIVER_$'
-	console.log('[Driver] ', driver_type)
-	let create_driver: () => Driver = () => { throw new Error('Driver constructor not found.') }
-	switch (driver_type) {
-		case 'WebSocket':
-			create_driver = (await import('./drivers/websocket_driver')).default
-			break
-		case 'WebRTC':
-			create_driver = (await import('./drivers/webrtc_driver')).default
-			break
-		default:
-			console.error('FAIL! [Driver] Unknown driver type: ', driver_type)
-			return
-	}
-	const driver = create_driver()
-	const api = create_json_api(driver)
-	const client = create_client(api)
-	client.api.driver.on_status_change = () => {
-		document.getElementById('menu-status')!.textContent = client.api.driver.get_status()
-		render()
-	}
+	const remote = await create_remote()
+	remote.driver.on_status_change = render
 
 	const canvas = document.getElementById('canvas') as HTMLCanvasElement
 	const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
@@ -52,15 +31,7 @@ import { Driver } from './driver'
 	}
 
 	setInterval(() => {
-		if (!client.is_connected) return
-
-		if (client.ongoing_pings > 0) return
-		if (!client.is_connected) return
-		client.ping_server()
-	}, PING_TIME)
-
-	setInterval(() => {
-		if (!client.is_connected) return
+		if (!remote.driver.is_connected) return
 
 		for (const control of controls) {
 			if (control.sync)
@@ -74,13 +45,13 @@ import { Driver } from './driver'
 
 		// TODO: LAYOUT SYSTEM
 		controls = [
-			create_icon_button(client, () => { is_menu_open = true; update_menu() }, { center_x: 2, center_y: 2, icon: 'menu' }),
-			create_icon_button(client, () => { /* TODO: PAUSE */ }, { center_x: width - 2, center_y: 2, icon: 'pause' }),
-			create_button(client, 'a', { label: 'A', center_x: width - 4, center_y: height - 9 }),
-			create_button(client, 'b', { label: 'B', center_x: width - 9, center_y: height - 4 }),
-			create_button(client, 'x', { label: 'X', center_x: width - 9, center_y: height - 4 - 10 }),
-			create_button(client, 'y', { label: 'Y', center_x: width - 4 - 10, center_y: height - 9 }),
-			create_joystick(client, 'l', { label: 'L', radius: 4, padding: 1, center_x: 8, center_y: height - 8 }),
+			create_icon_button(remote, () => { is_menu_open = true; update_menu() }, { center_x: 2, center_y: 2, icon: 'menu' }),
+			create_icon_button(remote, () => { /* TODO: PAUSE */ }, { center_x: width - 2, center_y: 2, icon: 'pause' }),
+			create_button(remote, 'a', { label: 'A', center_x: width - 4, center_y: height - 9 }),
+			create_button(remote, 'b', { label: 'B', center_x: width - 9, center_y: height - 4 }),
+			create_button(remote, 'x', { label: 'X', center_x: width - 9, center_y: height - 4 - 10 }),
+			create_button(remote, 'y', { label: 'Y', center_x: width - 4 - 10, center_y: height - 9 }),
+			create_joystick(remote, 'l', { label: 'L', radius: 4, padding: 1, center_x: 8, center_y: height - 8 }),
 		]
 
 		render()
@@ -111,10 +82,13 @@ import { Driver } from './driver'
 	}
 
 	function render_status(): void {
-		let text = client.api.driver.get_status()
-		if (client.is_connected && client.ping_count > 0) {
-			text = `${Math.round(client.last_ping)}ms (${Math.round(client.get_avg_ping())}ms)`
+		let text = 'null'
+		if (remote.driver.is_connected && remote.ping > 0) {
+			text = `${remote.driver.name}: ${Math.round(remote.ping)}ms`
 			ctx.globalAlpha = 0.25
+		}
+		else {
+			text = `${remote.driver.name}: ${remote.driver.get_status()}`
 		}
 		ctx.font = 'bold 1px sans-serif'
 		ctx.textAlign = 'center'
@@ -208,5 +182,5 @@ import { Driver } from './driver'
 		update_menu()
 	})
 
-	client.connect(`ws://${location.hostname}:$_DRIVER_PORT_$`)
+	remote.driver.connect()
 })()

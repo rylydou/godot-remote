@@ -1,4 +1,4 @@
-import { Client } from '../client'
+import { Remote } from '../remote'
 import { Control } from '../control'
 import { distance_sqr } from '../vec'
 
@@ -8,7 +8,7 @@ export interface MenuButtonOptions {
 	icon?: string
 }
 
-export function create_icon_button(client: Client, on_press: () => void, options?: MenuButtonOptions): Control {
+export function create_icon_button(client: Remote, on_press: () => void, options?: MenuButtonOptions): Control {
 	const center_x = options?.center_x || 0
 	const center_y = options?.center_y || 0
 	const icon = options?.icon || 'none'
@@ -17,7 +17,7 @@ export function create_icon_button(client: Client, on_press: () => void, options
 	let is_active = false
 
 	const button = {
-		client,
+		remote: client,
 
 		down(x, y, pid) {
 			if (is_active) return

@@ -40,6 +40,48 @@
   }
 })();
 const index = "";
+function fill_canvas(canvas, resized) {
+  const parent = canvas.parentElement;
+  if (!parent)
+    throw new Error("This canvas has no parent.");
+  const resize_observer = new ResizeObserver(
+    (entries, observer) => {
+      _fill_resize(canvas, entries[0]);
+      if (resized)
+        resized();
+    }
+  );
+  try {
+    resize_observer.observe(parent, { box: "device-pixel-content-box" });
+  } catch {
+    resize_observer.observe(parent, { box: "content-box" });
+  }
+  return {
+    destroy() {
+      resize_observer.disconnect();
+    }
+  };
+}
+function _fill_resize(canvas, entry) {
+  if (entry.devicePixelContentBoxSize) {
+    canvas.width = Math.round(entry.devicePixelContentBoxSize[0].inlineSize);
+    canvas.height = Math.round(entry.devicePixelContentBoxSize[0].blockSize);
+    return;
+  }
+  let dpr = window.devicePixelRatio;
+  if (entry.contentBoxSize) {
+    if (entry.contentBoxSize[0]) {
+      canvas.width = Math.round(entry.contentBoxSize[0].inlineSize * dpr);
+      canvas.height = Math.round(entry.contentBoxSize[0].blockSize * dpr);
+      return;
+    }
+    canvas.width = Math.round(entry.contentBoxSize.inlineSize * dpr);
+    canvas.height = Math.round(entry.contentBoxSize.blockSize * dpr);
+    return;
+  }
+  canvas.width = Math.round(entry.contentRect.width * dpr);
+  canvas.height = Math.round(entry.contentRect.height * dpr);
+}
 const scriptRel = "modulepreload";
 const assetsURL = function(dep) {
   return "/" + dep;
@@ -91,106 +133,92 @@ const __vitePreload = function preload(baseModule, deps, importerUrl) {
     }
   });
 };
-function fill_canvas(canvas, resized) {
-  const parent = canvas.parentElement;
-  if (!parent)
-    throw new Error("This canvas has no parent.");
-  const resize_observer = new ResizeObserver(
-    (entries, observer) => {
-      _fill_resize(canvas, entries[0]);
-      if (resized)
-        resized();
-    }
-  );
-  try {
-    resize_observer.observe(parent, { box: "device-pixel-content-box" });
-  } catch {
-    resize_observer.observe(parent, { box: "content-box" });
-  }
-  return {
-    destroy() {
-      resize_observer.disconnect();
-    }
-  };
-}
-function _fill_resize(canvas, entry) {
-  if (entry.devicePixelContentBoxSize) {
-    canvas.width = Math.round(entry.devicePixelContentBoxSize[0].inlineSize);
-    canvas.height = Math.round(entry.devicePixelContentBoxSize[0].blockSize);
-    return;
-  }
-  let dpr = window.devicePixelRatio;
-  if (entry.contentBoxSize) {
-    if (entry.contentBoxSize[0]) {
-      canvas.width = Math.round(entry.contentBoxSize[0].inlineSize * dpr);
-      canvas.height = Math.round(entry.contentBoxSize[0].blockSize * dpr);
-      return;
-    }
-    canvas.width = Math.round(entry.contentBoxSize.inlineSize * dpr);
-    canvas.height = Math.round(entry.contentBoxSize.blockSize * dpr);
-    return;
-  }
-  canvas.width = Math.round(entry.contentRect.width * dpr);
-  canvas.height = Math.round(entry.contentRect.height * dpr);
-}
 const AUTO_SYNC_RATE = 20;
 const PING_TIME = 3e3;
 const UNIT_SIZE = 16;
 const SESSION_STORAGE_KEY = "gremote:session_id";
-function create_client(api) {
-  const client = {
-    api,
-    reconnect_address: "",
-    auto_reconnect: true,
-    is_connected: false,
-    status: "Connecting...",
-    connect(address) {
-      client.reconnect_address = address;
-      api.driver.connect(address);
-    },
-    session_id: 0,
-    ongoing_pings: 0,
-    last_pong_timestamp: 0,
-    last_ping: 0,
-    ping_sum: 0,
-    ping_count: 0,
-    get_avg_ping: () => Math.max(client.ping_sum / client.ping_count, 0),
-    ping_server() {
-      client.ongoing_pings++;
-      client.api.send_ping(Date.now());
-    }
+async function create_remote() {
+  let client_type = "$_CLIENT_$";
+  let protocol_type = "$_PROTOCOL_$";
+  if (client_type.startsWith("$"))
+    client_type = "RTC";
+  if (protocol_type.startsWith("$"))
+    protocol_type = "JSON";
+  console.log("Driver:", client_type);
+  console.log("Protocol:", protocol_type);
+  let create_client = () => {
+    throw new Error("Client constructor not found.");
   };
-  const new_session_id = Math.floor(Math.random() * 1e5);
-  client.session_id = Number(sessionStorage.getItem(SESSION_STORAGE_KEY) || new_session_id);
-  sessionStorage.setItem(SESSION_STORAGE_KEY, client.session_id.toString());
-  document.getElementById("menu_session_id").textContent = "#" + client.session_id;
-  client.api.receive_ping = (sts) => {
-    client.api.send_pong(sts, Date.now());
+  let create_protocol = () => {
+    throw new Error("Protocol constructor not found.");
   };
-  client.api.receive_pong = (sts, rts) => {
+  switch (client_type) {
+    case "WS":
+      create_client = (await __vitePreload(() => import("./index3.js"), true ? [] : void 0)).default;
+      break;
+    case "RTC":
+      create_client = (await __vitePreload(() => import("./index2.js"), true ? ["index2.js","index3.js"] : void 0)).default;
+      break;
+  }
+  switch (protocol_type) {
+    case "JSON":
+      create_protocol = (await __vitePreload(() => import("./json.js"), true ? [] : void 0)).default;
+      break;
+  }
+  const driver = create_client();
+  const protocol = create_protocol();
+  driver.on_message = protocol.handle_message;
+  protocol.on_ping = (sts) => {
+    driver.send_reliable(client.protocol.pong(sts, Date.now()));
+  };
+  protocol.on_pong = (sts, rts) => {
+    var _a;
     const now = Date.now();
     const ping = now - sts;
     client.ongoing_pings--;
-    client.last_ping = ping;
-    client.last_pong_timestamp = now;
-    client.ping_sum += ping;
-    client.ping_count++;
+    client.ping = ping;
+    client.pong_timestamp = now;
+    (_a = client.on_status_change) == null ? void 0 : _a.call(client);
   };
-  client.api.driver.on_open = () => {
+  driver.on_open = () => {
     console.log("[Client] Connected.");
-    client.is_connected = true;
-    client.ping_count = 0;
-    client.ping_sum = 0;
     client.ongoing_pings = 0;
-    client.last_ping = 0;
-    client.last_pong_timestamp = 0;
-    api.send_session(client.session_id);
+    client.ping = 0;
+    client.pong_timestamp = 0;
+    client.driver.send_reliable(client.protocol.session(client.session_id));
   };
-  client.api.driver.on_close = () => {
-    client.is_connected = false;
-    if (client.auto_reconnect) {
-      console.log("[Client] Auto reconnecting due to disconnect.");
-      client.api.driver.connect(client.reconnect_address);
+  driver.on_close = () => {
+    setTimeout(() => {
+      if (client.auto_reconnect) {
+        console.log("[Client] Auto reconnecting due to disconnect.");
+        client.driver.connect();
+      }
+    }, 5e3);
+  };
+  setInterval(() => {
+    if (!driver.is_connected)
+      return;
+    if (client.ongoing_pings > 0)
+      return;
+    client.ping_server();
+  }, PING_TIME);
+  const new_session_id = Math.floor(Math.random() * 899999) + 1e5;
+  const session_id = Number(sessionStorage.getItem(SESSION_STORAGE_KEY) || new_session_id);
+  sessionStorage.setItem(SESSION_STORAGE_KEY, session_id.toString());
+  document.getElementById("menu_session_id").textContent = "#" + session_id;
+  const client = {
+    protocol,
+    driver,
+    auto_reconnect: true,
+    // is_connected: false,
+    status: "Connecting...",
+    session_id,
+    ongoing_pings: 0,
+    pong_timestamp: 0,
+    ping: 0,
+    ping_server() {
+      client.ongoing_pings++;
+      client.protocol.ping(Date.now());
     }
   };
   return client;
@@ -217,7 +245,7 @@ function angle(x, y) {
 function from_angle(angle_rad, length2) {
   return [Math.cos(angle_rad) * length2, Math.sin(angle_rad) * length2];
 }
-function create_button(client, id, options) {
+function create_button(remote, id, options) {
   const label = (options == null ? void 0 : options.label) || "";
   const center_x = (options == null ? void 0 : options.center_x) || 0;
   const center_y = (options == null ? void 0 : options.center_y) || 0;
@@ -227,16 +255,16 @@ function create_button(client, id, options) {
   let is_active = false;
   let synced_active = false;
   const button = {
-    client,
+    remote,
     sync(forced) {
-      if (!client.is_connected)
+      if (!remote.driver.is_connected)
         return;
       if (!forced) {
         if (synced_active == is_active)
           return;
       }
       synced_active = is_active;
-      client.api.send_input_btn(id, synced_active);
+      remote.driver.send_reliable(remote.protocol.input_btn(id, synced_active));
     },
     down(x, y, pid) {
       if (is_active)
@@ -276,7 +304,7 @@ function create_button(client, id, options) {
   };
   return button;
 }
-function create_joystick(client, id, options) {
+function create_joystick(remote, id, options) {
   const radius = (options == null ? void 0 : options.radius) || 4;
   const padding = (options == null ? void 0 : options.padding) || 1;
   const bounds_thickness = 0.5;
@@ -296,9 +324,9 @@ function create_joystick(client, id, options) {
   let synced_x = 0;
   let synced_y = 0;
   const joystick = {
-    client,
+    remote,
     sync(forced) {
-      if (!client.is_connected)
+      if (!remote.driver.is_connected)
         return;
       let x = stick_x;
       let y = stick_y;
@@ -318,7 +346,7 @@ function create_joystick(client, id, options) {
       }
       synced_x = x;
       synced_y = y;
-      client.api.send_input_joy(id, synced_x, synced_y);
+      remote.driver.send_unreliable(remote.protocol.input_joy(id, synced_x, synced_y));
     },
     down(x, y, pid) {
       if (active)
@@ -370,6 +398,12 @@ function create_joystick(client, id, options) {
       ctx.beginPath();
       ctx.ellipse(stick_x * radius, stick_y * radius, handle_radius, handle_radius, 0, 0, 7);
       ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(synced_x * radius, synced_y * radius, handle_radius * 0.5, handle_radius * 0.5, 0, 0, 7);
+      ctx.save();
+      ctx.fillStyle = "red";
+      ctx.fill();
+      ctx.restore();
       ctx.font = `bold ${handle_radius}px Bespoke Sans`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -387,7 +421,7 @@ function create_icon_button(client, on_press, options) {
   let pointer_id = 0;
   let is_active = false;
   const button = {
-    client,
+    remote: client,
     down(x, y, pid) {
       if (is_active)
         return;
@@ -444,155 +478,10 @@ function create_icon_button(client, on_press, options) {
   };
   return button;
 }
-function create_json_api(driver) {
-  function round(x) {
-    return Math.round(x * 100) / 100;
-  }
-  function send_reliable(message) {
-    driver.send_reliable(JSON.stringify(message));
-  }
-  function send_unreliable(message) {
-    driver.send_unreliable(JSON.stringify(message));
-  }
-  const api = {
-    driver,
-    receive_ping(sts) {
-    },
-    receive_pong(sts, rts) {
-    },
-    receive_sync(id) {
-    },
-    receive_sync_all() {
-    },
-    receive_layout(id) {
-    },
-    receive_alert(title, body) {
-    },
-    receive_banner(text) {
-    },
-    receive_clear_banner() {
-    },
-    send_ping(sts) {
-      send_reliable({
-        _: "ping",
-        sts
-      });
-    },
-    send_pong(sts, rts) {
-      send_reliable({
-        _: "pong",
-        sts,
-        rts
-      });
-    },
-    send_input_btn(id, is_down) {
-      send_reliable({
-        _: "input",
-        id,
-        d: is_down
-      });
-    },
-    send_input_axis(id, value) {
-      send_unreliable({
-        _: "input",
-        id,
-        v: round(value)
-      });
-    },
-    send_input_joy(id, x, y) {
-      send_unreliable({
-        _: "input",
-        id,
-        x: round(x),
-        y: round(y)
-      });
-    },
-    send_name(name) {
-      send_reliable({
-        _: "name",
-        name
-      });
-    },
-    send_session(sid) {
-      send_reliable({
-        _: "session",
-        sid
-      });
-    },
-    send_layout_ready(id) {
-      send_reliable({
-        _: "layout_ready",
-        id
-      });
-    }
-  };
-  api.driver.on_message = (message) => {
-    const dict = JSON.parse(message);
-    if (!dict) {
-      console.error("[JSON API] Cannot parse packet. The packet is not valid json.");
-      return;
-    }
-    if (!dict._) {
-      console.error("[JSON API] Cannot parse packet. The packet is missing and type and is therefore corrupt.");
-      return;
-    }
-    switch (dict._) {
-      case "ping":
-        api.receive_ping(dict.sts);
-        break;
-      case "pong":
-        api.receive_pong(dict.sts, dict.rts);
-        break;
-      case "sync":
-        api.receive_sync(dict.id);
-        break;
-      case "sync_all":
-        api.receive_sync_all();
-        break;
-      case "layout":
-        api.receive_layout(dict.id);
-        break;
-      case "alert":
-        api.receive_alert(dict.title, dict.body);
-        break;
-      case "banner":
-        api.receive_banner(dict.text);
-        break;
-      case "clear_banner":
-        api.receive_clear_banner();
-        break;
-      default:
-        console.error("[JSON API] Unknown packet type: ", dict._);
-        break;
-    }
-  };
-  return api;
-}
 (async () => {
   var _a;
-  const driver_type = "$_DRIVER_$";
-  console.log("[Driver] ", driver_type);
-  let create_driver = () => {
-    throw new Error("Driver constructor not found.");
-  };
-  switch (driver_type) {
-    case "WebSocket":
-      create_driver = (await __vitePreload(() => import("./websocket_driver.js"), true ? [] : void 0)).default;
-      break;
-    case "WebRTC":
-      create_driver = (await __vitePreload(() => import("./webrtc_driver.js"), true ? [] : void 0)).default;
-      break;
-    default:
-      console.error("FAIL! [Driver] Unknown driver type: ", driver_type);
-      return;
-  }
-  const driver = create_driver();
-  const api = create_json_api(driver);
-  const client = create_client(api);
-  client.api.driver.on_status_change = () => {
-    document.getElementById("menu-status").textContent = client.api.driver.get_status();
-    render();
-  };
+  const remote = await create_remote();
+  remote.driver.on_status_change = render;
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
   const menu_element = document.getElementById("menu");
@@ -608,16 +497,7 @@ function create_json_api(driver) {
     return window.devicePixelRatio * UNIT_SIZE;
   }
   setInterval(() => {
-    if (!client.is_connected)
-      return;
-    if (client.ongoing_pings > 0)
-      return;
-    if (!client.is_connected)
-      return;
-    client.ping_server();
-  }, PING_TIME);
-  setInterval(() => {
-    if (!client.is_connected)
+    if (!remote.driver.is_connected)
       return;
     for (const control of controls) {
       if (control.sync)
@@ -628,17 +508,17 @@ function create_json_api(driver) {
     width = ctx.canvas.width / scale_factor();
     height = ctx.canvas.height / scale_factor();
     controls = [
-      create_icon_button(client, () => {
+      create_icon_button(remote, () => {
         is_menu_open = true;
         update_menu();
       }, { center_x: 2, center_y: 2, icon: "menu" }),
-      create_icon_button(client, () => {
+      create_icon_button(remote, () => {
       }, { center_x: width - 2, center_y: 2, icon: "pause" }),
-      create_button(client, "a", { label: "A", center_x: width - 4, center_y: height - 9 }),
-      create_button(client, "b", { label: "B", center_x: width - 9, center_y: height - 4 }),
-      create_button(client, "x", { label: "X", center_x: width - 9, center_y: height - 4 - 10 }),
-      create_button(client, "y", { label: "Y", center_x: width - 4 - 10, center_y: height - 9 }),
-      create_joystick(client, "l", { label: "L", radius: 4, padding: 1, center_x: 8, center_y: height - 8 })
+      create_button(remote, "a", { label: "A", center_x: width - 4, center_y: height - 9 }),
+      create_button(remote, "b", { label: "B", center_x: width - 9, center_y: height - 4 }),
+      create_button(remote, "x", { label: "X", center_x: width - 9, center_y: height - 4 - 10 }),
+      create_button(remote, "y", { label: "Y", center_x: width - 4 - 10, center_y: height - 9 }),
+      create_joystick(remote, "l", { label: "L", radius: 4, padding: 1, center_x: 8, center_y: height - 8 })
     ];
     render();
   });
@@ -661,10 +541,12 @@ function create_json_api(driver) {
     ctx.restore();
   }
   function render_status() {
-    let text = client.api.driver.get_status();
-    if (client.is_connected && client.ping_count > 0) {
-      text = `${Math.round(client.last_ping)}ms (${Math.round(client.get_avg_ping())}ms)`;
+    let text = "null";
+    if (remote.driver.is_connected && remote.ping > 0) {
+      text = `${remote.driver.name}: ${Math.round(remote.ping)}ms`;
       ctx.globalAlpha = 0.25;
+    } else {
+      text = `${remote.driver.name}: ${remote.driver.get_status()}`;
     }
     ctx.font = "bold 1px sans-serif";
     ctx.textAlign = "center";
@@ -738,5 +620,5 @@ function create_json_api(driver) {
     is_menu_open = false;
     update_menu();
   });
-  client.connect(`ws://${location.hostname}:$_DRIVER_PORT_$`);
+  remote.driver.connect();
 })();

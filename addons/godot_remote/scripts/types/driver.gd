@@ -26,4 +26,4 @@ func disconnect_peer(peer_id: int, reason: String = '') -> void:
 	pass
 
 func new_peer_id() -> int:
-	return randi_range(2, 1 << 30)
+	return randi_range(100_000, 999_999)

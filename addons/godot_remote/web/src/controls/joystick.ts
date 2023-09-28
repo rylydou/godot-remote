@@ -1,4 +1,4 @@
-import { Client } from '../client'
+import { Remote } from '../remote'
 import { Control } from '../control'
 import { angle, clamp_length, distance_sqr, from_angle, length } from '../vec'
 
@@ -11,7 +11,7 @@ export interface JoystickOptions {
 	high_precision?: boolean
 }
 
-export function create_joystick(client: Client, id: string, options?: JoystickOptions): Control {
+export function create_joystick(remote: Remote, id: string, options?: JoystickOptions): Control {
 	const radius = options?.radius || 4
 	const padding = options?.padding || 1
 	const bounds_thickness = .5
@@ -34,10 +34,10 @@ export function create_joystick(client: Client, id: string, options?: JoystickOp
 	let synced_y = 0
 
 	const joystick = {
-		client,
+		remote: remote,
 
 		sync(forced) {
-			if (!client.is_connected) return
+			if (!remote.driver.is_connected) return
 
 			let x = stick_x
 			let y = stick_y
@@ -62,7 +62,7 @@ export function create_joystick(client: Client, id: string, options?: JoystickOp
 			synced_x = x
 			synced_y = y
 
-			client.api.send_input_joy(id, synced_x, synced_y)
+			remote.driver.send_unreliable(remote.protocol.input_joy(id, synced_x, synced_y))
 		},
 
 		down(x, y, pid) {
@@ -128,12 +128,12 @@ export function create_joystick(client: Client, id: string, options?: JoystickOp
 			ctx.fill()
 
 			// Debug
-			// ctx.beginPath()
-			// ctx.ellipse(synced_x * radius, synced_y * radius, handle_radius * .5, handle_radius * .5, 0, 0, 7)
-			// ctx.save()
-			// ctx.fillStyle = 'red'
-			// ctx.fill()
-			// ctx.restore()
+			ctx.beginPath()
+			ctx.ellipse(synced_x * radius, synced_y * radius, handle_radius * .5, handle_radius * .5, 0, 0, 7)
+			ctx.save()
+			ctx.fillStyle = 'red'
+			ctx.fill()
+			ctx.restore()
 
 			ctx.font = `bold ${handle_radius}px Bespoke Sans`
 			ctx.textAlign = 'center'
