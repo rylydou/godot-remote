@@ -1,5 +1,6 @@
 extends 'res://addons/godot_remote/scripts/types/api.gd'
 
+
 func handle_packet(peer_id: int, data: Variant) -> void:
 	# prints(peer_id, data)
 	if typeof(data) != TYPE_STRING: return
@@ -35,6 +36,7 @@ func handle_packet(peer_id: int, data: Variant) -> void:
 			receive_session.emit(peer_id, session_id)
 		_: print('[JSON API] Unknown packet type from #',peer_id,': ', type)
 
+
 func _handle_input_packet(peer_id: int, dict: Dictionary) -> void:
 	if not dict.has('id'): return
 	var id := str(dict['id'])
@@ -51,15 +53,18 @@ func _handle_input_packet(peer_id: int, dict: Dictionary) -> void:
 		
 		_: print('[JSON API] Unknown input id from #',peer_id,': ', id)
 
+
 func _handle_btn_input(peer_id: int, dict: Dictionary, id: String) -> void:
 	if not dict.has('d'): return
 	var down: bool = dict['d'] # TYPE TRUST
 	receive_input_btn.emit(peer_id, id, down)
 
+
 func _handle_axis_input(peer_id: int, dict: Dictionary, id: String) -> void:
 	if not dict.has('v'): return
 	var value: float = dict['v'] # TYPE TRUST
 	receive_input_axis.emit(peer_id, id, value)
+
 
 func _handle_joy_input(peer_id: int, dict: Dictionary, id: String) -> void:
 	if not dict.has('x'): return
@@ -73,14 +78,17 @@ func _handle_joy_input(peer_id: int, dict: Dictionary, id: String) -> void:
 func send_json_reliable(peer_id: int, data: Variant) -> void:
 	send_reliable.emit(peer_id, JSON.stringify(data))
 
+
 func send_json_unreliable(peer_id: int, data: Variant) -> void:
 	send_unreliable.emit(peer_id, JSON.stringify(data))
+
 
 func send_ping(peer_id: int, sts: int) -> void:
 	send_json_reliable(peer_id, {
 		'_': 'ping',
 		'sts': sts,
 	})
+
 
 func send_pong(peer_id: int, sts: int, rts: int) -> void:
 	send_json_reliable(peer_id, {

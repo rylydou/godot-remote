@@ -1,7 +1,7 @@
 class_name GodotRemote extends Node
 
-const CONFIG := preload('res://addons/godot_remote/config.gd')
 
+const CONFIG := preload('res://addons/godot_remote/config.gd')
 # Imports
 const Util = preload('res://addons/godot_remote/scripts/util.gd')
 const API = preload('res://addons/godot_remote/scripts/types/api.gd')
@@ -12,17 +12,20 @@ const BtnInput = preload('res://addons/godot_remote/scripts/types/btn_input.gd')
 const AxisInput = preload('res://addons/godot_remote/scripts/types/axis_input.gd')
 const JoyInput = preload('res://addons/godot_remote/scripts/types/joy_input.gd')
 
+
 enum InputHandleMode {
 	Manual,
 	Idle,
 	Physics,
 }
 
+
 ## A empty string if a error occurred
 signal http_address_changed(address: String)
 
 signal controller_added(session_id: int)
 signal controller_removed(session_id: int)
+
 
 @export var autostart = true
 @export var starting_port = 8080
@@ -43,12 +46,14 @@ var api: API
 var driver: Driver
 var driver_port: int
 
+
 ## Peer ID (int) to Client
 var _clients: Dictionary = {}
 ## Session ID (int) to Controller
 var _controllers: Dictionary = {}
 
 var ip_address: String
+
 
 func _ready() -> void:
 	var _api = RefCounted.new()
@@ -74,6 +79,7 @@ func _ready() -> void:
 	if autostart:
 		get_tree().process_frame.connect(start_servers, Node.CONNECT_ONE_SHOT)
 
+
 func _connect_signals() -> void:
 	driver.client_connected.connect(_on_client_connected)
 	driver.client_disconnected.connect(_on_client_disconnected)
@@ -90,10 +96,12 @@ func _connect_signals() -> void:
 	api.receive_session.connect(_on_receive_session)
 	api.receive_layout_ready.connect(_on_receive_layout_ready)
 
+
 func start_servers() -> void:
 	print('[Remote] Starting servers')
 	start_http_server(starting_port, max_port_retries)
 	start_driver_server(http_server_port + 1, max_port_retries)
+
 
 func start_http_server(port: int, max_retries: int) -> void:
 	http_server.stop()
@@ -105,10 +113,12 @@ func start_http_server(port: int, max_retries: int) -> void:
 		return
 	_update_http_address()
 
+
 func _update_http_address() -> void:
 	http_server_address = str('http://',ip_address,':',http_server_port)
 	print('[Remote/HTTP] Server started at address: ',http_server_address)
 	http_address_changed.emit(http_server_address)
+
 
 func start_driver_server(port: int, max_retries: int) -> void:
 	driver.stop()
@@ -120,9 +130,11 @@ func start_driver_server(port: int, max_retries: int) -> void:
 		return
 	_update_driver_port()
 
+
 func _update_driver_port() -> void:
 	print('[Remote/Driver] Server started on port #',driver_port)
 	http_file_router.secrets['$_DRIVER_PORT_$'] = str(driver_port)
+
 
 func _process(delta: float) -> void:
 	if input_handle_mode == InputHandleMode.Idle:
@@ -130,9 +142,11 @@ func _process(delta: float) -> void:
 	
 	driver.poll()
 
+
 func _physics_process(delta: float) -> void:
 	if input_handle_mode == InputHandleMode.Physics:
 		handle_all_inputs()
+
 
 func handle_all_inputs() -> void:
 	for controller in _controllers.values():
@@ -141,24 +155,29 @@ func handle_all_inputs() -> void:
 			if input.has_method('handle'):
 				input.call('handle')
 
+
 func get_client(peer_id: int) -> Client:
 	# assert(_clients.has(peer_id), str('[Remote] Cannot get client. A client with peer id #',peer_id,' does not exist.'))
 	if not _clients.has(peer_id): return null
 	return _clients[peer_id]
 
+
 func kick_client(peer_id: int, reason: String) -> void:
 	driver.close_socket(peer_id, 1000, reason)
 	_clients.erase(peer_id)
+
 
 func get_controller(session_id: int) -> Controller:
 	# assert(_controllers.has(session_id), str('[Remote] Cannot get controller. A controller with session id #',session_id,' does not exist.'))
 	if not _controllers.has(session_id): return null
 	return _controllers[session_id]
 
+
 func get_input(session_id: int, id: Variant) -> Variant:
 	var controller := get_controller(session_id)
 	assert(controller, str('[Remote] Cannot get controller. A controller with session id #',session_id,' does not exist.'))
 	return controller.get_input(id)
+
 
 func get_controller_by_peer(peer_id: int) -> Controller:
 	var client := get_client(peer_id)
@@ -166,10 +185,12 @@ func get_controller_by_peer(peer_id: int) -> Controller:
 	if not client.is_assigned: return null
 	return get_controller(client.session_id)
 
+
 func get_input_by_peer(peer_id: int, id: Variant) -> Variant:
 	var controller := get_controller_by_peer(peer_id)
 	assert(controller, str('[Remote] Cannot get controller by peer id. A controller assigned to client peer id #',peer_id,' was not found.'))
 	return controller.get_input(id)
+
 
 func add_controller(session_id: int) -> Controller:
 	assert(not _controllers.has(session_id), str('[Remote] Cannot add controller. A controller with session id #',session_id,' already exists.'))
@@ -189,11 +210,13 @@ func add_controller(session_id: int) -> Controller:
 	
 	return controller
 
+
 func remove_controller(session_id: int) -> void:
 	assert(_controllers.has(session_id), str('[Remote] Cannot remove controller. A controller with session id #',session_id,' does not exist.'))
 
 	controller_removed.emit(session_id)
 	_controllers.erase(session_id)
+
 
 func remove_idle_controllers() -> void:
 	var to_remove: Array[int] = []
@@ -204,6 +227,7 @@ func remove_idle_controllers() -> void:
 		to_remove.append(session_id)
 	for session_id in to_remove:
 		remove_controller(session_id)
+
 
 ## Returns true of the controller was transferred from another client
 func assign_client_to_controller(peer_id: int, session_id: int) -> void:
@@ -230,9 +254,11 @@ func assign_client_to_controller(peer_id: int, session_id: int) -> void:
 	controller.client_changed.emit(old_peer_id, peer_id)
 	controller.connection_changed.emit(true)
 
+
 func _on_client_connected(peer_id: int) -> void:
 	var client := Client.new(peer_id)
 	_clients[peer_id] = client
+
 
 func _on_client_disconnected(peer_id: int) -> void:
 	var client: Client = _clients[peer_id]
@@ -245,13 +271,16 @@ func _on_client_disconnected(peer_id: int) -> void:
 	controller.connection_changed.emit(false)
 	controller.client_changed.emit(peer_id, 0)
 
+
 func ping_client(peer_id: int) -> void:
 	var client := get_client(peer_id)
 	client.ongoing_pings += 1
 	api.send_ping(peer_id, api.get_time_msec())
 
+
 func _on_receive_ping(peer_id: int, sts: int) -> void:
 	api.send_pong(peer_id, sts, api.get_time_msec())
+
 
 func _on_receive_pong(peer_id: int, sts: int, rts: int) -> void:
 	var timestamp := api.get_time_msec()
@@ -265,6 +294,7 @@ func _on_receive_pong(peer_id: int, sts: int, rts: int) -> void:
 	client.ongoing_pings -= 1
 	client.last_heartbeat_timestamp = timestamp
 
+
 func _on_receive_input_btn(peer_id: int, id: Variant, is_down: bool) -> void:
 	var btn: BtnInput = get_input_by_peer(peer_id, id)
 	btn.is_down = is_down
@@ -273,13 +303,16 @@ func _on_receive_input_btn(peer_id: int, id: Variant, is_down: bool) -> void:
 	else:
 		btn.is_just_released = true
 
+
 func _on_receive_input_axis(peer_id: int, id: Variant, value: float) -> void:
 	var axis: AxisInput = get_input_by_peer(peer_id, id)
 	axis.value = value
 
+
 func _on_receive_input_joy(peer_id: int, id: Variant, x: float, y: float) -> void:
 	var joy: JoyInput = get_input_by_peer(peer_id, id)
 	joy.position = Vector2(x, y)
+
 
 func _on_receive_name(peer_id: int, username: String) -> void:
 	var client: Client = _clients[peer_id]
@@ -289,12 +322,14 @@ func _on_receive_name(peer_id: int, username: String) -> void:
 	controller.username = username
 	controller.username_changed.emit(username)
 
+
 func _on_receive_session(peer_id: int, session_id: int) -> void:
 	if not _controllers.has(session_id):
 		print('[Remote] Adding a new controller for new client.')
 		add_controller(session_id)
 	
 	assign_client_to_controller(peer_id, session_id)
+
 
 func _on_receive_layout_ready(peer_id: int, id: StringName) -> void:
 	pass

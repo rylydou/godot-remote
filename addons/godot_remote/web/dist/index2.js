@@ -4,6 +4,7 @@ function rtc_driver(protocol, driver) {
   let peer = null;
   let reliable_channel = null;
   let unreliable_channel = null;
+  let ice_ufrag = "";
   function update_connection_state() {
     var _a, _b, _c, _d;
     const was_connected = client.is_connected;
@@ -65,23 +66,34 @@ function rtc_driver(protocol, driver) {
       peer.onicecandidateerror = () => console.error("[RTC] Candidate error.");
       peer.onicecandidate = async (event) => {
         console.log("[RTC] Local candidate: ", event.candidate);
-        driver.send_reliable(protocol.candidate(event.candidate.candidate, event.candidate.sdpMLineIndex, event.candidate.usernameFragment));
+        if (event.candidate) {
+          driver.send_reliable(protocol.candidate(event.candidate.sdpMid, event.candidate.sdpMLineIndex, event.candidate.candidate));
+        } else {
+          driver.send_reliable(protocol.candidate("", 0, ""));
+        }
       };
       peer.onconnectionstatechange = (ev) => {
         console.log("[RTC] Peer:", peer.connectionState);
         update_connection_state();
       };
+      protocol.on_description = (sdp, type) => {
+        console.log(`[RTC] Received ${type}:`, sdp);
+        const ufrag_start = sdp.indexOf("a=ice-ufrag:") + 12;
+        const ufrag_end = sdp.indexOf("\r\n", ufrag_start);
+        ice_ufrag = sdp.substring(ufrag_start, ufrag_end);
+        console.log("[RTC] Ice ufrag:", ice_ufrag);
+        const desc = new RTCSessionDescription({ sdp, type });
+        peer.setRemoteDescription(desc);
+      };
       protocol.on_candidate = async (media, index, name) => {
         await new Promise((resolve) => setTimeout(resolve, 2e3));
+        console.log("[RTC] Received candidate:", { media, index, name });
+        console.log("[RTC] Ice ufrag:", ice_ufrag);
         peer.addIceCandidate({
           candidate: media,
           sdpMLineIndex: index,
-          usernameFragment: name
+          usernameFragment: ice_ufrag
         });
-      };
-      protocol.on_description = (sdp, type) => {
-        console.log(`[RTC] Received ${type}:`, sdp);
-        peer.setRemoteDescription({ sdp, type });
       };
       console.log("[RTC] Creating offer.");
       const offer = await peer.createOffer();

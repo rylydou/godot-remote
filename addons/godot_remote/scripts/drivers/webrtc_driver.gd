@@ -1,24 +1,29 @@
 extends 'res://addons/godot_remote/scripts/types/driver.gd'
 
+
 const WebSocketDriver = preload('res://addons/godot_remote/scripts/drivers/websocket_driver.gd')
 
-@export var handshake_timeout := 3000
-
-var _wss := WebSocketDriver.new()
 
 class Peer:
 	var peer_id: int
-	var connection: WebRTCPeerConnection
-	var reliable_channel: WebRTCDataChannel 
-	var unreliable_channel: WebRTCDataChannel
+	var connection: WebRTCPeer
+
+
+@export var handshake_timeout := 3000
+
+
+var _wss := WebSocketDriver.new()
+
 
 # peer id (int) to Peer
 var _peers: Dictionary = {}
+
 
 var tree: SceneTree
 func build_http(http_server: HttpServer, file_router: HttpFileRouter) -> void:
 	tree = http_server.get_tree()
 	file_router.secrets['$_DRIVER_$'] = 'RTC'
+
 
 func start(port: int) -> int:
 	_wss.client_connected.connect(_on_client_connected)
@@ -26,6 +31,7 @@ func start(port: int) -> int:
 	_wss.message_received.connect(_on_message_received)
 	_wss.start(port)
 	return OK
+
 
 func _on_client_connected(peer_id: int) -> void:
 	print('[RTC] Creating client #',peer_id)
@@ -45,6 +51,8 @@ func _on_client_connected(peer_id: int) -> void:
 		'_': 'ready',
 		'peer_id': peer_id,
 	}))
+
+
 func _on_client_disconnected(peer_id: int) -> void:
 	print('[RTC] Removing client #',peer_id)
 	var peer: Peer = _peers[peer_id]
@@ -52,6 +60,7 @@ func _on_client_disconnected(peer_id: int) -> void:
 	peer.unreliable_channel.close()
 	peer.reliable_channel.close()
 	peer.connection.close()
+
 
 func _on_message_received(peer_id: int, message: Variant) -> void:
 	var dict: Dictionary = JSON.parse_string(message)
@@ -61,15 +70,18 @@ func _on_message_received(peer_id: int, message: Variant) -> void:
 		'candidate': handle_candidate(peer_id, dict['media'], dict['index'], dict['name'])
 		_: printerr('[RTC] Unknown signal type: ',type)
 
+
 func handle_description(peer_id: int, offer_type: String, offer_sdp: String) -> void:
 	var peer: Peer = _peers[peer_id]
 	var err = peer.connection.set_remote_description(offer_type, offer_sdp)
 	print('[RTC] set_remote_description: ',error_string(err))
 
+
 func handle_candidate(peer_id: int, media: String, index: int, name: String) -> void:
 	var peer: Peer = _peers[peer_id]
 	var err = peer.connection.add_ice_candidate(media, index, name)
 	print('[RTC] add_ice_candidate: ',error_string(err))
+
 
 func _on_session_description_created(peer: Peer, answer_type: String, answer_sdp: String) -> void:
 	print('[RTC] Description type=',answer_type,' sdp=',answer_sdp)
@@ -81,6 +93,7 @@ func _on_session_description_created(peer: Peer, answer_type: String, answer_sdp
 		'type': answer_type,
 	}))
 
+
 func _on_ice_candidate_created(peer: Peer, media: String, index: int, name: String) -> void:
 	print('[RTC] Candidate media=',media,' index=',index,' name=',name)
 	_wss.send_reliable(peer.peer_id, JSON.stringify({
@@ -90,12 +103,11 @@ func _on_ice_candidate_created(peer: Peer, media: String, index: int, name: Stri
 		'name': name,
 	}))
 
+
 func _create_peer() -> Peer:
 	var peer := Peer.new()
-	peer.connection = WebRTCPeerConnection.new()
-	peer.connection.initialize({
-		"iceServers": [ { "urls": ["stun:stun.l.google.com:19302"] } ]
-	})
+	peer.connection = WebRTCPeer.new()
+	peer.connection.initialize()
 	
 	peer.reliable_channel = peer.connection.create_data_channel('reliable', {
 		'negotiated': true,
@@ -110,6 +122,7 @@ func _create_peer() -> Peer:
 	})
 	
 	return peer
+
 
 func poll() -> void:
 	_wss.poll()

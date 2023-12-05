@@ -1,6 +1,8 @@
 extends RefCounted
 
+
 signal assignment_changed(is_assigned: bool)
+
 
 ## The WebSocket peer id.
 var peer_id := 0
@@ -22,6 +24,7 @@ var ping_sum := 0
 var last_ping_ms := 0
 ## The average ping time in milliseconds.
 var avg_ping_ms := 0
+
 
 func _init(peer_id: int) -> void:
 	self.peer_id = peer_id

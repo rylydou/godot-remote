@@ -1,16 +1,6 @@
 # Based from: https://github.com/godotengine/godot-demo-projects/blob/e9f0f75c5ba0fe81197b35f31c73e09a70be5054/networking/websocket_chat/websocket/WebSocketServer.gd
 extends 'res://addons/godot_remote/scripts/types/driver.gd'
 
-@export var handshake_headers: PackedStringArray = []
-@export var supported_protocols: PackedStringArray = []
-@export var handshake_timout := 3000
-@export var use_tls := false
-@export var tls_cert: X509Certificate
-@export var tls_key: CryptoKey
-@export var refuse_new_connections := false:
-	set(refuse):
-		if refuse:
-			pending_peers.clear()
 
 class PendingPeer:
 	var connect_time: int
@@ -23,12 +13,27 @@ class PendingPeer:
 		connection = p_tcp
 		connect_time = Time.get_ticks_msec()
 
+
+@export var handshake_headers: PackedStringArray = []
+@export var supported_protocols: PackedStringArray = []
+@export var handshake_timout := 3000
+@export var use_tls := false
+@export var tls_cert: X509Certificate
+@export var tls_key: CryptoKey
+@export var refuse_new_connections := false:
+	set(refuse):
+		if refuse:
+			pending_peers.clear()
+
+
 var tcp_server := TCPServer.new()
 var pending_peers: Array[PendingPeer] = []
 var peers: Dictionary = {}
 
+
 func build_http(http_server: HttpServer, file_router: HttpFileRouter) -> void:
 	file_router.secrets['$_DRIVER_$'] = 'WS'
+
 
 func start(port: int) -> int:
 	if tcp_server.is_listening():
@@ -36,10 +41,12 @@ func start(port: int) -> int:
 	
 	return tcp_server.listen(port)
 
+
 func stop():
 	tcp_server.stop()
 	pending_peers.clear()
 	peers.clear()
+
 
 func send_reliable(peer_id: int, message: Variant) -> int:
 	assert(peers.has(peer_id), str('[WS] Cannot send packed. A peer with peer_id #',peer_id,' does not exist.'))
@@ -49,8 +56,10 @@ func send_reliable(peer_id: int, message: Variant) -> int:
 		return ws.send_text(message)
 	return ws.send(message)
 
+
 func send_unreliable(peer_id: int, message: Variant) -> int:
 	return send_reliable(peer_id, message)
+
 
 func get_message(peer_id: int) -> Variant:
 	assert(peers.has(peer_id), str('[WS] Cannot get message. A peer with peer_id #',peer_id,' does not exist.'))
@@ -63,15 +72,18 @@ func get_message(peer_id: int) -> Variant:
 		return packet.get_string_from_utf8()
 	return packet
 
+
 func has_message(peer_id: int) -> bool:
 	assert(peers.has(peer_id), str('[WS] Cannot get message. A peer with peer_id #',peer_id,' does not exist.'))
 	return peers[peer_id].get_available_packet_count() > 0
+
 
 func _create_peer() -> WebSocketPeer:
 	var ws := WebSocketPeer.new()
 	ws.supported_protocols = supported_protocols
 	ws.handshake_headers = handshake_headers
 	return ws
+
 
 func poll() -> void:
 	if not tcp_server.is_listening():
@@ -108,6 +120,7 @@ func poll() -> void:
 		peers.erase(r)
 	to_remove.clear()
 
+
 func _connect_pending(peer: PendingPeer) -> bool:
 	if peer.ws != null:
 		# Poll websocket client if doing handshake
@@ -143,6 +156,7 @@ func _connect_pending(peer: PendingPeer) -> bool:
 		if status != StreamPeerTLS.STATUS_HANDSHAKING:
 			return true # Failure.
 		return false
+
 
 func disconnect_peer(peer_id: int, reason: String = '') -> void:
 	var ws: WebSocketPeer = peers[peer_id]

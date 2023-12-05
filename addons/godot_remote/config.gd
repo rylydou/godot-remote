@@ -1,5 +1,6 @@
 extends RefCounted
 
+
 # This is the configuration file for Godot Remote.
 # In case if something goes wrong you can find the original file here:
 # - https://github.com/rylydou/godot-remote/blob/main/addons/godot_remote/plugin.gd.

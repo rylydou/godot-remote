@@ -3,12 +3,15 @@ extends RefCounted
 signal send_reliable(peer_id: int, data: Variant)
 signal send_unreliable(peer_id: int, data: Variant)
 
+
 func handle_packet(peer_id: int, data: Variant) -> void:
 	pass
+
 
 func get_time_msec() -> int:
 	var datetime_dict := Time.get_time_dict_from_system(true)
 	return Time.get_unix_time_from_datetime_dict(datetime_dict)
+
 
 signal receive_ping(peer_id: int, sts: int)
 signal receive_pong(peer_id: int, sts: int, rts: int)
@@ -18,6 +21,7 @@ signal receive_input_joy(peer_id: int, id: Variant, x: float, y: float)
 signal receive_name(peer_id: int, id: Variant, name: String)
 signal receive_session(peer_id: int, sid: int)
 signal receive_layout_ready(peer_id: int, id: StringName)
+
 
 func send_ping(peer_id: int, sts: int) -> void:
 	pass
