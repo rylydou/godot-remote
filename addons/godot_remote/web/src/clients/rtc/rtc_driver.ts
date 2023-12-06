@@ -6,7 +6,6 @@ export function rtc_driver(protocol: RtcSignalProtocol, driver: Client) {
 	let peer: RTCPeerConnection | null = null
 	let reliable_channel: RTCDataChannel | null = null
 	let unreliable_channel: RTCDataChannel | null = null
-	let ice_ufrag = ''
 
 	function update_connection_state() {
 		const was_connected = client.is_connected
@@ -40,7 +39,15 @@ export function rtc_driver(protocol: RtcSignalProtocol, driver: Client) {
 		async connect() {
 			console.log(`[RTC] Initializing #${peer_id}`)
 
-			peer = new RTCPeerConnection({ iceServers: [{ "urls": ["stun:stun.l.google.com:19302"] }] })
+			peer = new RTCPeerConnection({
+				iceServers: [
+					{ "urls": ["stun:stun.l.google.com:19302"] },
+					// { "urls": ["stun:stun1.l.google.com:19302"] },
+					// { "urls": ["stun:stun2.l.google.com:19302"] },
+					// { "urls": ["stun:stun3.l.google.com:19302"] },
+					// { "urls": ["stun:stun4.l.google.com:19302"] },
+				]
+			})
 
 			reliable_channel = peer.createDataChannel('reliable', { negotiated: true, id: 1 })
 			reliable_channel.onopen = () => {
@@ -74,12 +81,11 @@ export function rtc_driver(protocol: RtcSignalProtocol, driver: Client) {
 			peer.onicecandidateerror = () => console.error('[RTC] Candidate error.')
 			peer.onicecandidate = async (event) => {
 				console.log('[RTC] Local candidate: ', event.candidate)
-				if (event.candidate) {
-					driver.send_reliable(protocol.candidate(event.candidate!.sdpMid!, event.candidate!.sdpMLineIndex!, event.candidate!.candidate))
-					// ice_ufrag = event.candidate.usernameFragment!
+				if (event.candidate && event.candidate.candidate) {
+					driver.send_reliable(protocol.candidate(event.candidate.candidate))
 				}
 				else {
-					driver.send_reliable(protocol.candidate('', 0, ''))
+					// driver.send_reliable(protocol.candidate(''))
 				}
 			}
 
@@ -88,25 +94,16 @@ export function rtc_driver(protocol: RtcSignalProtocol, driver: Client) {
 				update_connection_state()
 			}
 
-			protocol.on_description = (sdp, type) => {
+			protocol.on_description = (type, sdp) => {
 				console.log(`[RTC] Received ${type}:`, sdp)
-				const ufrag_start = sdp.indexOf('a=ice-ufrag:') + 12
-				const ufrag_end = sdp.indexOf('\r\n', ufrag_start)
-				ice_ufrag = sdp.substring(ufrag_start, ufrag_end)
-				console.log('[RTC] Ice ufrag:', ice_ufrag)
-				const desc = new RTCSessionDescription({ sdp, type: type as RTCSdpType })
+				const desc = new RTCSessionDescription({ type: type as RTCSdpType, sdp })
 				peer!.setRemoteDescription(desc)
 			}
 
-			protocol.on_candidate = async (media, index, name) => {
+			protocol.on_candidate = async (candidate) => {
 				await new Promise<void>((resolve) => setTimeout(resolve, 2000))
-				console.log('[RTC] Received candidate:', { media, index, name })
-				console.log('[RTC] Ice ufrag:', ice_ufrag)
-				peer!.addIceCandidate({
-					candidate: media,
-					sdpMLineIndex: index,
-					usernameFragment: ice_ufrag,
-				})
+				console.log('[RTC] Received candidate:', candidate)
+				peer!.addIceCandidate({ candidate, sdpMid: '0' })
 			}
 
 			console.log('[RTC] Creating offer.')
@@ -117,7 +114,7 @@ export function rtc_driver(protocol: RtcSignalProtocol, driver: Client) {
 			await peer.setLocalDescription(offer)
 
 			console.log('[RTC] Sending offer.')
-			driver.send_reliable(protocol.description(offer.sdp ?? '', offer.type))
+			driver.send_reliable(protocol.description(offer.type, offer.sdp ?? ''))
 		},
 		async disconnect() {
 			console.log('[RTC] Disconnecting.')

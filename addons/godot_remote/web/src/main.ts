@@ -90,7 +90,7 @@ import { create_icon_button } from './controls/menu_button'
 		else {
 			text = `${remote.driver.name}: ${remote.driver.get_status()}`
 		}
-		ctx.font = 'bold 1px sans-serif'
+		ctx.font = 'bold 1px monospace'
 		ctx.textAlign = 'center'
 		ctx.textBaseline = 'top'
 		ctx.fillText(text, width / 2, 1, width * .9)

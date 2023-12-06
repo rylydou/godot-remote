@@ -140,6 +140,7 @@ const SESSION_STORAGE_KEY = "gremote:session_id";
 async function create_remote() {
   let client_type = "$_CLIENT_$";
   let protocol_type = "$_PROTOCOL_$";
+  console.log(client_type);
   if (client_type.startsWith("$"))
     client_type = "RTC";
   if (protocol_type.startsWith("$"))
@@ -209,7 +210,7 @@ async function create_remote() {
   const client = {
     protocol,
     driver,
-    auto_reconnect: true,
+    auto_reconnect: false,
     // is_connected: false,
     status: "Connecting...",
     session_id,
@@ -548,7 +549,7 @@ function create_icon_button(client, on_press, options) {
     } else {
       text = `${remote.driver.name}: ${remote.driver.get_status()}`;
     }
-    ctx.font = "bold 1px sans-serif";
+    ctx.font = "bold 1px monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     ctx.fillText(text, width / 2, 1, width * 0.9);

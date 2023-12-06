@@ -32,7 +32,7 @@ var peers: Dictionary = {}
 
 
 func build_http(http_server: HttpServer, file_router: HttpFileRouter) -> void:
-	file_router.secrets['$_DRIVER_$'] = 'WS'
+	file_router.secrets['$_CLIENT_$'] = 'WS'
 
 
 func start(port: int) -> int:

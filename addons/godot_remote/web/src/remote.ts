@@ -23,6 +23,7 @@ export interface Remote {
 export async function create_remote() {
 	let client_type = '$_CLIENT_$'
 	let protocol_type = '$_PROTOCOL_$'
+	console.log(client_type)
 	if (client_type.startsWith('$'))
 		client_type = 'RTC'
 	if (protocol_type.startsWith('$'))
@@ -96,7 +97,7 @@ export async function create_remote() {
 		protocol,
 		driver,
 
-		auto_reconnect: true,
+		auto_reconnect: false,
 		// is_connected: false,
 		status: 'Connecting...',
 

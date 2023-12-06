@@ -36,6 +36,9 @@ gdscript/warnings/static_called_on_instance=0
 gdscript/warnings/redundant_await=0
 gdscript/warnings/integer_division=0
 gdscript/warnings/narrowing_conversion=0
+gdscript/warnings/confusable_identifier=0
+gdscript/warnings/confusable_local_declaration=0
+gdscript/warnings/confusable_local_usage=0
 
 [display]
 

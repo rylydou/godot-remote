@@ -4,7 +4,6 @@ function rtc_driver(protocol, driver) {
   let peer = null;
   let reliable_channel = null;
   let unreliable_channel = null;
-  let ice_ufrag = "";
   function update_connection_state() {
     var _a, _b, _c, _d;
     const was_connected = client.is_connected;
@@ -33,7 +32,15 @@ function rtc_driver(protocol, driver) {
     is_connected: false,
     async connect() {
       console.log(`[RTC] Initializing #${peer_id}`);
-      peer = new RTCPeerConnection({ iceServers: [{ "urls": ["stun:stun.l.google.com:19302"] }] });
+      peer = new RTCPeerConnection({
+        iceServers: [
+          { "urls": ["stun:stun.l.google.com:19302"] }
+          // { "urls": ["stun:stun1.l.google.com:19302"] },
+          // { "urls": ["stun:stun2.l.google.com:19302"] },
+          // { "urls": ["stun:stun3.l.google.com:19302"] },
+          // { "urls": ["stun:stun4.l.google.com:19302"] },
+        ]
+      });
       reliable_channel = peer.createDataChannel("reliable", { negotiated: true, id: 1 });
       reliable_channel.onopen = () => {
         console.log("[RTC] Reliable channel opened.");
@@ -66,34 +73,23 @@ function rtc_driver(protocol, driver) {
       peer.onicecandidateerror = () => console.error("[RTC] Candidate error.");
       peer.onicecandidate = async (event) => {
         console.log("[RTC] Local candidate: ", event.candidate);
-        if (event.candidate) {
-          driver.send_reliable(protocol.candidate(event.candidate.sdpMid, event.candidate.sdpMLineIndex, event.candidate.candidate));
-        } else {
-          driver.send_reliable(protocol.candidate("", 0, ""));
+        if (event.candidate && event.candidate.candidate) {
+          driver.send_reliable(protocol.candidate(event.candidate.candidate));
         }
       };
       peer.onconnectionstatechange = (ev) => {
         console.log("[RTC] Peer:", peer.connectionState);
         update_connection_state();
       };
-      protocol.on_description = (sdp, type) => {
+      protocol.on_description = (type, sdp) => {
         console.log(`[RTC] Received ${type}:`, sdp);
-        const ufrag_start = sdp.indexOf("a=ice-ufrag:") + 12;
-        const ufrag_end = sdp.indexOf("\r\n", ufrag_start);
-        ice_ufrag = sdp.substring(ufrag_start, ufrag_end);
-        console.log("[RTC] Ice ufrag:", ice_ufrag);
-        const desc = new RTCSessionDescription({ sdp, type });
+        const desc = new RTCSessionDescription({ type, sdp });
         peer.setRemoteDescription(desc);
       };
-      protocol.on_candidate = async (media, index, name) => {
+      protocol.on_candidate = async (candidate) => {
         await new Promise((resolve) => setTimeout(resolve, 2e3));
-        console.log("[RTC] Received candidate:", { media, index, name });
-        console.log("[RTC] Ice ufrag:", ice_ufrag);
-        peer.addIceCandidate({
-          candidate: media,
-          sdpMLineIndex: index,
-          usernameFragment: ice_ufrag
-        });
+        console.log("[RTC] Received candidate:", candidate);
+        peer.addIceCandidate({ candidate, sdpMid: "0" });
       };
       console.log("[RTC] Creating offer.");
       const offer = await peer.createOffer();
@@ -101,7 +97,7 @@ function rtc_driver(protocol, driver) {
       console.log("[RTC] Setting local description to offer.");
       await peer.setLocalDescription(offer);
       console.log("[RTC] Sending offer.");
-      driver.send_reliable(protocol.description(offer.sdp ?? "", offer.type));
+      driver.send_reliable(protocol.description(offer.type, offer.sdp ?? ""));
     },
     async disconnect() {
       console.log("[RTC] Disconnecting.");
@@ -130,6 +126,7 @@ function rtc_signal_protocol() {
   const protocol = {
     handle_message(message) {
       var _a, _b, _c;
+      console.log("[RTC API] ", message);
       const dict = JSON.parse(message);
       if (!dict) {
         console.error("[RTC API] Cannot parse packet. The packet is not valid json.");
@@ -144,29 +141,27 @@ function rtc_signal_protocol() {
           (_a = protocol.on_ready) == null ? void 0 : _a.call(protocol, dict.peer_id);
           break;
         case "description":
-          (_b = protocol.on_description) == null ? void 0 : _b.call(protocol, dict.sdp, dict.type);
+          (_b = protocol.on_description) == null ? void 0 : _b.call(protocol, dict.type, dict.sdp);
           break;
         case "candidate":
-          (_c = protocol.on_candidate) == null ? void 0 : _c.call(protocol, dict.media, dict.index, dict.name);
+          (_c = protocol.on_candidate) == null ? void 0 : _c.call(protocol, dict.candidate);
           break;
         default:
           console.error("[RTC API] Unknown packet type: ", dict._);
           break;
       }
     },
-    description: (sdp, type) => {
+    description: (type, sdp) => {
       return JSON.stringify({
         _: "description",
         type,
         sdp
       });
     },
-    candidate: (media, index, name) => {
+    candidate: (candidate) => {
       return JSON.stringify({
         _: "candidate",
-        media,
-        index,
-        name
+        candidate
       });
     }
   };
