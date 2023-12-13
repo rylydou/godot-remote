@@ -5,7 +5,7 @@ Use your phone as a wireless gamepad in Godot.
 
 ## Setup for Games
 
-- Install the `lib` from `WebRTC plugin - Godot 4.1+` into `res://` (directly into the root).
+- The binaries for WebRTC are not inclueded in the repository because they are too large and therefore need to be installed separately. This can be done by going into the AssetLib in godot and downloading `WebRTC plugin - Godot 4.1+`. Install the `lib` directory into `res://` (directly into the root), everything else can be excluded. **Restarting Godot may be necessary.**
 
 
 ### Additional Setup for Development
