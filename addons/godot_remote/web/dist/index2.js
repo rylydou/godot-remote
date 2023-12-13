@@ -50,7 +50,10 @@ function rtc_driver(protocol, driver) {
         console.log("[RTC] Reliable channel closed.");
         update_connection_state();
       };
-      reliable_channel.onerror = (ev) => console.log("[RTC] Reliable channel error: ", ev);
+      reliable_channel.onerror = (ev) => {
+        console.log("[RTC] Reliable channel error: ", ev);
+        update_connection_state();
+      };
       reliable_channel.onmessage = (ev) => {
         var _a;
         console.log("[RTC] Reliable message:", ev.data);
@@ -65,31 +68,46 @@ function rtc_driver(protocol, driver) {
         console.log("[RTC] Unreliable channel closed.");
         update_connection_state();
       };
-      unreliable_channel.onerror = (ev) => console.log("[RTC] Unreliable channel error: ", ev);
+      unreliable_channel.onerror = (ev) => {
+        console.log("[RTC] Unreliable channel error: ", ev);
+        update_connection_state();
+      };
       unreliable_channel.onmessage = (ev) => {
         var _a;
         (_a = client.on_message) == null ? void 0 : _a.call(client, ev.data);
       };
-      peer.onicecandidateerror = () => console.error("[RTC] Candidate error.");
+      peer.onicecandidateerror = () => {
+        console.error("[RTC] Candidate error.");
+        update_connection_state();
+      };
       peer.onicecandidate = async (event) => {
         console.log("[RTC] Local candidate: ", event.candidate);
         if (event.candidate && event.candidate.candidate) {
-          driver.send_reliable(protocol.candidate(event.candidate.candidate));
+          driver.send_reliable(protocol.candidate(
+            event.candidate.candidate,
+            event.candidate.sdpMid || "",
+            event.candidate.sdpMLineIndex || 0
+          ));
         }
       };
       peer.onconnectionstatechange = (ev) => {
         console.log("[RTC] Peer:", peer.connectionState);
         update_connection_state();
       };
-      protocol.on_description = (type, sdp) => {
+      protocol.on_description = async (type, sdp) => {
         console.log(`[RTC] Received ${type}:`, sdp);
+        console.log("[RTC] Setting desc");
         const desc = new RTCSessionDescription({ type, sdp });
         peer.setRemoteDescription(desc);
       };
-      protocol.on_candidate = async (candidate) => {
-        await new Promise((resolve) => setTimeout(resolve, 2e3));
-        console.log("[RTC] Received candidate:", candidate);
-        peer.addIceCandidate({ candidate, sdpMid: "0" });
+      protocol.on_candidate = async (candidate, sdp_mid, sdp_index) => {
+        console.log("[RTC] Received candidate:", { candidate, sdp_mid, sdp_index });
+        peer.addIceCandidate({
+          candidate,
+          sdpMid: sdp_mid,
+          sdpMLineIndex: sdp_index
+          /* usernameFragment: name */
+        });
       };
       console.log("[RTC] Creating offer.");
       const offer = await peer.createOffer();
@@ -126,7 +144,6 @@ function rtc_signal_protocol() {
   const protocol = {
     handle_message(message) {
       var _a, _b, _c;
-      console.log("[RTC API] ", message);
       const dict = JSON.parse(message);
       if (!dict) {
         console.error("[RTC API] Cannot parse packet. The packet is not valid json.");
@@ -144,7 +161,7 @@ function rtc_signal_protocol() {
           (_b = protocol.on_description) == null ? void 0 : _b.call(protocol, dict.type, dict.sdp);
           break;
         case "candidate":
-          (_c = protocol.on_candidate) == null ? void 0 : _c.call(protocol, dict.candidate);
+          (_c = protocol.on_candidate) == null ? void 0 : _c.call(protocol, dict.candidate, dict.sdp_mid, dict.sdp_index);
           break;
         default:
           console.error("[RTC API] Unknown packet type: ", dict._);
@@ -158,10 +175,12 @@ function rtc_signal_protocol() {
         sdp
       });
     },
-    candidate: (candidate) => {
+    candidate: (candidate, sdp_mid, sdp_index) => {
       return JSON.stringify({
         _: "candidate",
-        candidate
+        candidate,
+        sdp_mid,
+        sdp_index
       });
     }
   };

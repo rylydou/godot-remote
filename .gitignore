@@ -2,7 +2,7 @@
 .godot/
 
 # Godot extentions
-webrtc/
+lib/
 
 # Web
 node_modules/

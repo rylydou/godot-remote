@@ -58,7 +58,10 @@ export function rtc_driver(protocol: RtcSignalProtocol, driver: Client) {
 				console.log('[RTC] Reliable channel closed.')
 				update_connection_state()
 			}
-			reliable_channel.onerror = (ev) => console.log('[RTC] Reliable channel error: ', ev)
+			reliable_channel.onerror = (ev) => {
+				console.log('[RTC] Reliable channel error: ', ev)
+				update_connection_state()
+			}
 			reliable_channel.onmessage = (ev) => {
 				console.log('[RTC] Reliable message:', ev.data)
 				client.on_message?.(ev.data)
@@ -73,16 +76,27 @@ export function rtc_driver(protocol: RtcSignalProtocol, driver: Client) {
 				console.log('[RTC] Unreliable channel closed.')
 				update_connection_state()
 			}
-			unreliable_channel.onerror = (ev) => console.log('[RTC] Unreliable channel error: ', ev)
+			unreliable_channel.onerror = (ev) => {
+				console.log('[RTC] Unreliable channel error: ', ev)
+				update_connection_state()
+			}
 			unreliable_channel.onmessage = (ev) => {
 				client.on_message?.(ev.data)
 			}
 
-			peer.onicecandidateerror = () => console.error('[RTC] Candidate error.')
+			peer.onicecandidateerror = () => {
+				console.error('[RTC] Candidate error.')
+				update_connection_state()
+			}
 			peer.onicecandidate = async (event) => {
 				console.log('[RTC] Local candidate: ', event.candidate)
 				if (event.candidate && event.candidate.candidate) {
-					driver.send_reliable(protocol.candidate(event.candidate.candidate))
+					// event.candidate.usernameFragment || ''
+					driver.send_reliable(protocol.candidate(
+						event.candidate.candidate,
+						event.candidate.sdpMid || '',
+						event.candidate.sdpMLineIndex || 0,
+					))
 				}
 				else {
 					// driver.send_reliable(protocol.candidate(''))
@@ -94,16 +108,18 @@ export function rtc_driver(protocol: RtcSignalProtocol, driver: Client) {
 				update_connection_state()
 			}
 
-			protocol.on_description = (type, sdp) => {
+			protocol.on_description = async (type, sdp) => {
 				console.log(`[RTC] Received ${type}:`, sdp)
+				// await new Promise((resolve) => setTimeout(resolve, 3000))
+				console.log('[RTC] Setting desc')
 				const desc = new RTCSessionDescription({ type: type as RTCSdpType, sdp })
 				peer!.setRemoteDescription(desc)
 			}
 
-			protocol.on_candidate = async (candidate) => {
-				await new Promise<void>((resolve) => setTimeout(resolve, 2000))
-				console.log('[RTC] Received candidate:', candidate)
-				peer!.addIceCandidate({ candidate, sdpMid: '0' })
+			protocol.on_candidate = async (candidate, sdp_mid, sdp_index) => {
+				// await new Promise<void>((resolve) => setTimeout(resolve, 2000))
+				console.log('[RTC] Received candidate:', { candidate, sdp_mid, sdp_index })
+				peer!.addIceCandidate({ candidate, sdpMid: sdp_mid, sdpMLineIndex: sdp_index, /* usernameFragment: name */ })
 			}
 
 			console.log('[RTC] Creating offer.')

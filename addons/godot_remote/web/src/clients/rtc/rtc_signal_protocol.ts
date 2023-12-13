@@ -2,11 +2,11 @@ export interface RtcSignalProtocol {
 	readonly handle_message: (message: any) => void
 
 	readonly description: (type: string, sdp: string) => any
-	readonly candidate: (candidate: string) => any
+	readonly candidate: (candidate: string, sdp_mid: string, sdp_index: number) => any
 
 	on_ready?: (peer_id: number) => void
 	on_description?: (type: string, sdp: string) => void
-	on_candidate?: (candidate: string) => void
+	on_candidate?: (candidate: string, sdp_mid: string, sdp_index: number) => void
 }
 
 export function rtc_signal_protocol(): RtcSignalProtocol {
@@ -18,7 +18,7 @@ export function rtc_signal_protocol(): RtcSignalProtocol {
 			// 	return
 			// }
 
-			console.log('[RTC API] ', message)
+			// console.log('[RTC API] ', message)
 
 			const dict = JSON.parse(message)
 			if (!dict) {
@@ -38,7 +38,7 @@ export function rtc_signal_protocol(): RtcSignalProtocol {
 					protocol.on_description?.(dict.type, dict.sdp)
 					break
 				case 'candidate':
-					protocol.on_candidate?.(dict.candidate)
+					protocol.on_candidate?.(dict.candidate, dict.sdp_mid, dict.sdp_index)
 					break
 				default:
 					console.error('[RTC API] Unknown packet type: ', dict._)
@@ -52,10 +52,12 @@ export function rtc_signal_protocol(): RtcSignalProtocol {
 				sdp,
 			})
 		},
-		candidate: (candidate) => {
+		candidate: (candidate, sdp_mid, sdp_index) => {
 			return JSON.stringify({
 				_: 'candidate',
 				candidate,
+				sdp_mid,
+				sdp_index,
 			})
 		},
 	}

@@ -141,10 +141,14 @@ async function create_remote() {
   let client_type = "$_CLIENT_$";
   let protocol_type = "$_PROTOCOL_$";
   console.log(client_type);
-  if (client_type.startsWith("$"))
+  if (client_type.startsWith("$")) {
     client_type = "RTC";
-  if (protocol_type.startsWith("$"))
+    console.warn(`No client defined! Assuming ${client_type} which may not be correct.`);
+  }
+  if (protocol_type.startsWith("$")) {
     protocol_type = "JSON";
+    console.warn(`No protocol defined! Assuming ${protocol_type} which may not be correct.`);
+  }
   console.log("Driver:", client_type);
   console.log("Protocol:", protocol_type);
   let create_client = () => {
