@@ -22,7 +22,7 @@ func _process(delta: float) -> void:
 		modulate.a = .25
 		return
 	
-	modulate.a = 1. if controller.is_connected else .5
+	modulate.a = 1. if controller.is_peer_connected else .5
 	
 	# TODO: LAYOUT SYSTEM
 	var a = controller.is_btn_down(&'a')

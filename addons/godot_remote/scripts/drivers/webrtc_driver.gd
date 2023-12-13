@@ -21,9 +21,7 @@ var _wss := WebSocketDriver.new()
 var _peers: Dictionary = {}
 
 
-var tree: SceneTree
 func build_http(http_server: HttpServer, file_router: HttpFileRouter) -> void:
-	tree = http_server.get_tree()
 	file_router.secrets['$_DRIVER_$'] = 'RTC'
 
 
@@ -113,7 +111,6 @@ func _on_ice_candidate_created(peer: Peer, media: String, index: int, name: Stri
 func _create_peer() -> Peer:
 	var peer := Peer.new()
 	peer.connection = WebRTCPeerConnection.new()
-	# peer.connection.
 	peer.connection.initialize({
 		"iceServers": [
 			{ "urls": [ "stun:stun.l.google.com:19302" ], },

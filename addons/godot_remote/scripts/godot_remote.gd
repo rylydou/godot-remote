@@ -222,7 +222,7 @@ func remove_idle_controllers() -> void:
 	var to_remove: Array[int] = []
 	for session_id in _controllers:
 		var controller: Controller = _controllers[session_id]
-		if controller.is_connected: continue
+		if controller.is_peer_connected: continue
 		if controller.peer_id != 0: continue
 		to_remove.append(session_id)
 	for session_id in to_remove:
@@ -236,8 +236,8 @@ func assign_client_to_controller(peer_id: int, session_id: int) -> void:
 
 	var old_peer_id := controller.peer_id
 
-	if controller.is_connected:
-		controller.is_connected = false
+	if controller.is_peer_connected:
+		controller.is_peer_connected = false
 		controller.connection_changed.emit(false)
 
 		if old_peer_id > 1:
@@ -249,7 +249,7 @@ func assign_client_to_controller(peer_id: int, session_id: int) -> void:
 	var new_client: Client = _clients[peer_id]
 	new_client.session_id = session_id
 	new_client.is_assigned = true
-	controller.is_connected = true
+	controller.is_peer_connected = true
 	new_client.assignment_changed.emit(true)
 	controller.client_changed.emit(old_peer_id, peer_id)
 	controller.connection_changed.emit(true)
@@ -267,7 +267,7 @@ func _on_client_disconnected(peer_id: int) -> void:
 	if not client.is_assigned: return
 	var controller: Controller = _controllers[client.session_id]
 	controller.peer_id = 0
-	controller.is_connected = false
+	controller.is_peer_connected = false
 	controller.connection_changed.emit(false)
 	controller.client_changed.emit(peer_id, 0)
 

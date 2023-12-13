@@ -6,7 +6,7 @@ const AxisInput = preload('res://addons/godot_remote/scripts/types/axis_input.gd
 const JoyInput = preload('res://addons/godot_remote/scripts/types/joy_input.gd')
 
 
-signal connection_changed(is_connected: bool)
+signal connection_changed(is_peer_connected: bool)
 signal client_changed(from_peer_id: int, to_peer_id: int)
 signal username_changed(username: String)
 
@@ -17,7 +17,7 @@ var session_id := 0
 ## The Websocket id of the current connection.
 var peer_id := 0
 ## Same as peer_id != 0.
-var is_connected := false
+var is_peer_connected := false
 
 ## The username of the controller.
 var username := ''
