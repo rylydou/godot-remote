@@ -1,13 +1,13 @@
 [gd_scene load_steps=4 format=3 uid="uid://dmkr1j7fmmqyk"]
 
 [ext_resource type="Script" path="res://addons/godot_remote/scripts/godot_remote.gd" id="1_mlg1u"]
-[ext_resource type="Script" path="res://addons/godot_remote/scripts/drivers/webrtc_driver.gd" id="2_4cbr6"]
 [ext_resource type="Script" path="res://addons/godottpd/http_server.gd" id="2_7s16s"]
+[ext_resource type="Script" path="res://addons/godot_remote/scripts/drivers/sip_driver.gd" id="2_gqleq"]
 
 [node name="Remote" type="Node" node_paths=PackedStringArray("http_server")]
 script = ExtResource("1_mlg1u")
 http_server = NodePath("HttpServer")
-driver_script = ExtResource("2_4cbr6")
+driver_script = ExtResource("2_gqleq")
 
 [node name="HttpServer" type="Node" parent="."]
 script = ExtResource("2_7s16s")

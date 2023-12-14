@@ -84,7 +84,7 @@ import { create_icon_button } from './controls/menu_button'
 	function render_status(): void {
 		let text = 'null'
 		if (remote.driver.is_connected && remote.ping > 0) {
-			text = `${remote.driver.name}: ${Math.round(remote.ping)}ms`
+			text = `${remote.driver.name}: ${Math.round(remote.ping)}ms ${Math.round(remote.received_pings / remote.sent_pings * 100)}%`
 			ctx.globalAlpha = 0.25
 		}
 		else {

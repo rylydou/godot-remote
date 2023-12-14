@@ -5,7 +5,7 @@ Use your phone as a wireless gamepad in Godot.
 
 ## Setup for Games
 
-- The binaries for WebRTC are not inclueded in the repository because they are too large and therefore need to be installed separately. This can be done by going into the AssetLib in godot and downloading `WebRTC plugin - Godot 4.1+`. Install the `lib` directory into `res://` (directly into the root), everything else can be excluded. **Restarting Godot may be necessary.**
+- Install a mono version of Godot.
 
 
 ### Additional Setup for Development
@@ -22,4 +22,4 @@ Use your phone as a wireless gamepad in Godot.
 
 - Open `addons/godot_remote/scenes/autoloads/remote.tscn`
 - Define desired driver and api scripts
-  - At the moment only 2 drivers exist: WebSocket and WebRTC. You can find them in `addons/godot_remote/scripts/drivers/`.
+  - At the moment only 3 drivers exist: WebSocket, WebRTC, and SIP. You can find them in `addons/godot_remote/scripts/drivers/`.

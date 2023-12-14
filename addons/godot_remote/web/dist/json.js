@@ -75,8 +75,9 @@ function json_protocol() {
       return JSON.stringify({
         _: "input",
         id,
-        x: round(x),
-        y: round(y)
+        x: round(x) || 0,
+        y: round(y) || 0,
+        t: Date.now()
       });
     },
     name(name) {

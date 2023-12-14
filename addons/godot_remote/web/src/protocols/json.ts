@@ -85,8 +85,9 @@ export default function json_protocol(): Protocol {
 			return JSON.stringify({
 				_: 'input',
 				id: id,
-				x: round(x),
-				y: round(y),
+				x: round(x) || 0,
+				y: round(y) || 0,
+				t: Date.now(),
 			})
 		},
 		name(name) {

@@ -205,8 +205,8 @@ func add_controller(session_id: int) -> Controller:
 	controller.register_input(&'x', BtnInput.new())
 	controller.register_input(&'y', BtnInput.new())
 	controller.register_input(&'l', JoyInput.new())
-	
-	controller_added.emit(session_id)
+
+	call_thread_safe(&'emit_signal', &'controller_added', session_id)
 	
 	return controller
 
@@ -256,6 +256,7 @@ func assign_client_to_controller(peer_id: int, session_id: int) -> void:
 
 
 func _on_client_connected(peer_id: int) -> void:
+	print('[Remote] Client connected!')
 	var client := Client.new(peer_id)
 	_clients[peer_id] = client
 
@@ -279,6 +280,7 @@ func ping_client(peer_id: int) -> void:
 
 
 func _on_receive_ping(peer_id: int, sts: int) -> void:
+	# print('received ping')
 	api.send_pong(peer_id, sts, api.get_time_msec())
 
 
@@ -296,6 +298,8 @@ func _on_receive_pong(peer_id: int, sts: int, rts: int) -> void:
 
 
 func _on_receive_input_btn(peer_id: int, id: Variant, is_down: bool) -> void:
+	if get_client(peer_id).session_id == 0: return
+	
 	var btn: BtnInput = get_input_by_peer(peer_id, id)
 	btn.is_down = is_down
 	if is_down:
@@ -305,12 +309,17 @@ func _on_receive_input_btn(peer_id: int, id: Variant, is_down: bool) -> void:
 
 
 func _on_receive_input_axis(peer_id: int, id: Variant, value: float) -> void:
+	if get_client(peer_id).session_id == 0: return
+	
 	var axis: AxisInput = get_input_by_peer(peer_id, id)
 	axis.value = value
 
 
-func _on_receive_input_joy(peer_id: int, id: Variant, x: float, y: float) -> void:
+func _on_receive_input_joy(peer_id: int, id: Variant, x: float, y: float, t: int) -> void:
+	if get_client(peer_id).session_id == 0: return
 	var joy: JoyInput = get_input_by_peer(peer_id, id)
+	if joy.t > t: return
+	joy.t = t
 	joy.position = Vector2(x, y)
 
 

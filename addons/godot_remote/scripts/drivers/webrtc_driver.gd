@@ -8,7 +8,7 @@ class Peer:
 	var peer_id: int
 	var connection: WebRTCPeerConnection
 	var reliable_channel: WebRTCDataChannel
-	var unreliable_channel: WebRTCLibDataChannel
+	var unreliable_channel: WebRTCDataChannel
 
 
 @export var handshake_timeout := 3000

@@ -56,7 +56,6 @@ function rtc_driver(protocol, driver) {
       };
       reliable_channel.onmessage = (ev) => {
         var _a;
-        console.log("[RTC] Reliable message:", ev.data);
         (_a = client.on_message) == null ? void 0 : _a.call(client, ev.data);
       };
       unreliable_channel = peer.createDataChannel("unreliable", { negotiated: true, id: 2, maxRetransmits: 0, ordered: false });
@@ -86,7 +85,8 @@ function rtc_driver(protocol, driver) {
           driver.send_reliable(protocol.candidate(
             event.candidate.candidate,
             event.candidate.sdpMid || "",
-            event.candidate.sdpMLineIndex || 0
+            event.candidate.sdpMLineIndex || 0,
+            event.candidate.usernameFragment || ""
           ));
         }
       };
@@ -96,17 +96,17 @@ function rtc_driver(protocol, driver) {
       };
       protocol.on_description = async (type, sdp) => {
         console.log(`[RTC] Received ${type}:`, sdp);
-        console.log("[RTC] Setting desc");
         const desc = new RTCSessionDescription({ type, sdp });
         peer.setRemoteDescription(desc);
       };
-      protocol.on_candidate = async (candidate, sdp_mid, sdp_index) => {
+      protocol.on_candidate = async (candidate, sdp_mid, sdp_index, ufrag) => {
         console.log("[RTC] Received candidate:", { candidate, sdp_mid, sdp_index });
+        await new Promise((resolve) => setTimeout(resolve, 2e3));
         peer.addIceCandidate({
           candidate,
           sdpMid: sdp_mid,
-          sdpMLineIndex: sdp_index
-          /* usernameFragment: name */
+          sdpMLineIndex: sdp_index,
+          usernameFragment: ufrag
         });
       };
       console.log("[RTC] Creating offer.");
@@ -161,7 +161,7 @@ function rtc_signal_protocol() {
           (_b = protocol.on_description) == null ? void 0 : _b.call(protocol, dict.type, dict.sdp);
           break;
         case "candidate":
-          (_c = protocol.on_candidate) == null ? void 0 : _c.call(protocol, dict.candidate, dict.sdp_mid, dict.sdp_index);
+          (_c = protocol.on_candidate) == null ? void 0 : _c.call(protocol, dict.candidate, dict.sdp_mid, dict.sdp_index, dict.ufrag);
           break;
         default:
           console.error("[RTC API] Unknown packet type: ", dict._);
@@ -175,12 +175,13 @@ function rtc_signal_protocol() {
         sdp
       });
     },
-    candidate: (candidate, sdp_mid, sdp_index) => {
+    candidate: (candidate, sdp_mid, sdp_index, ufrag) => {
       return JSON.stringify({
         _: "candidate",
         candidate,
         sdp_mid,
-        sdp_index
+        sdp_index,
+        ufrag
       });
     }
   };

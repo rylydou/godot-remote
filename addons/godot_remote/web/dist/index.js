@@ -134,7 +134,7 @@ const __vitePreload = function preload(baseModule, deps, importerUrl) {
   });
 };
 const AUTO_SYNC_RATE = 20;
-const PING_TIME = 3e3;
+const PING_TIME = 1e3;
 const UNIT_SIZE = 16;
 const SESSION_STORAGE_KEY = "gremote:session_id";
 async function create_remote() {
@@ -180,16 +180,18 @@ async function create_remote() {
     var _a;
     const now = Date.now();
     const ping = now - sts;
-    client.ongoing_pings--;
     client.ping = ping;
     client.pong_timestamp = now;
+    client.received_pings++;
     (_a = client.on_status_change) == null ? void 0 : _a.call(client);
   };
-  driver.on_open = () => {
+  driver.on_open = async () => {
     console.log("[Client] Connected.");
-    client.ongoing_pings = 0;
+    client.sent_pings = 0;
+    client.received_pings = 0;
     client.ping = 0;
     client.pong_timestamp = 0;
+    await new Promise((resolve) => setTimeout(resolve, 2e3));
     client.driver.send_reliable(client.protocol.session(client.session_id));
   };
   driver.on_close = () => {
@@ -202,8 +204,6 @@ async function create_remote() {
   };
   setInterval(() => {
     if (!driver.is_connected)
-      return;
-    if (client.ongoing_pings > 0)
       return;
     client.ping_server();
   }, PING_TIME);
@@ -218,12 +218,13 @@ async function create_remote() {
     // is_connected: false,
     status: "Connecting...",
     session_id,
-    ongoing_pings: 0,
+    sent_pings: 0,
+    received_pings: 0,
     pong_timestamp: 0,
     ping: 0,
     ping_server() {
-      client.ongoing_pings++;
-      client.protocol.ping(Date.now());
+      client.sent_pings++;
+      driver.send_unreliable(client.protocol.ping(Date.now()));
     }
   };
   return client;
@@ -243,12 +244,6 @@ function clamp_length(x, y, max_length) {
   const len = length(x, y);
   const factor = Math.min(len, max_length) / len;
   return [x * factor, y * factor];
-}
-function angle(x, y) {
-  return Math.atan2(y, x);
-}
-function from_angle(angle_rad, length2) {
-  return [Math.cos(angle_rad) * length2, Math.sin(angle_rad) * length2];
 }
 function create_button(remote, id, options) {
   const label = (options == null ? void 0 : options.label) || "";
@@ -317,71 +312,48 @@ function create_joystick(remote, id, options) {
   const handle_radius = 3;
   const handle_outline = 0.5;
   const label = (options == null ? void 0 : options.label) || "";
-  const high_precision = (options == null ? void 0 : options.high_precision) || false;
-  const number_of_angles = 8;
-  const steps_of_precision = 2;
   let active = false;
   let pointer_id = 0;
   let center_x = (options == null ? void 0 : options.center_x) || 0;
   let center_y = (options == null ? void 0 : options.center_y) || 0;
-  let stick_x = 0;
-  let stick_y = 0;
-  let synced_x = 0;
-  let synced_y = 0;
+  let x = 0;
+  let y = 0;
   const joystick = {
     remote,
     sync(forced) {
       if (!remote.driver.is_connected)
         return;
-      let x = stick_x;
-      let y = stick_y;
-      if (!high_precision) {
-        let ang = angle(stick_x, stick_y);
-        let len = length(stick_x, stick_y);
-        const angles_of_precision = number_of_angles / (2 * Math.PI);
-        ang = Math.round(ang * angles_of_precision) / angles_of_precision;
-        len = Math.round(len * steps_of_precision) / steps_of_precision;
-        const vec = from_angle(ang, len);
-        x = vec[0];
-        y = vec[1];
-      }
-      if (!forced) {
-        if (x == synced_x && y == synced_y)
-          return;
-      }
-      synced_x = x;
-      synced_y = y;
-      remote.driver.send_unreliable(remote.protocol.input_joy(id, synced_x, synced_y));
+      remote.driver.send_unreliable(remote.protocol.input_joy(id, x, y));
     },
-    down(x, y, pid) {
+    down(x2, y2, pid) {
       if (active)
         return;
-      if (distance_sqr(center_x, center_y, x, y) <= (radius + padding) * (radius + padding)) {
+      if (distance_sqr(center_x, center_y, x2, y2) <= (radius + padding) * (radius + padding)) {
         active = true;
         pointer_id = pid;
       }
-      joystick.sync(false);
+      joystick.sync(true);
     },
-    move(x, y, pid) {
+    move(cx, cy, pid) {
       if (!active)
         return;
       if (pid != pointer_id)
         return;
-      stick_x = (x - center_x) / radius;
-      stick_y = (y - center_y) / radius;
-      const vec = clamp_length(stick_x, stick_y, 1);
-      stick_x = vec[0];
-      stick_y = vec[1];
+      x = (cx - center_x) / radius;
+      y = (cy - center_y) / radius;
+      const vec = clamp_length(x, y, 1);
+      x = vec[0];
+      y = vec[1];
     },
-    up(x, y, pid) {
+    up(cx, cy, pid) {
       if (!active)
         return;
       if (pid != pointer_id)
         return;
       active = false;
-      stick_x = 0;
-      stick_y = 0;
-      joystick.sync(false);
+      x = 0;
+      y = 0;
+      joystick.sync(true);
     },
     render(ctx) {
       ctx.translate(center_x, center_y);
@@ -391,29 +363,23 @@ function create_joystick(remote, id, options) {
       ctx.lineWidth = bounds_thickness;
       ctx.stroke();
       ctx.beginPath();
-      ctx.ellipse(stick_x * radius, stick_y * radius, handle_radius + handle_outline, handle_radius + handle_outline, 0, 0, 7);
+      ctx.ellipse(x * radius, y * radius, handle_radius + handle_outline, handle_radius + handle_outline, 0, 0, 7);
       ctx.globalCompositeOperation = "destination-out";
       ctx.fill();
       ctx.globalCompositeOperation = "source-over";
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.lineTo(stick_x * radius, stick_y * radius);
+      ctx.lineTo(x * radius, y * radius);
       ctx.lineWidth = line;
       ctx.stroke();
       ctx.beginPath();
-      ctx.ellipse(stick_x * radius, stick_y * radius, handle_radius, handle_radius, 0, 0, 7);
+      ctx.ellipse(x * radius, y * radius, handle_radius, handle_radius, 0, 0, 7);
       ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(synced_x * radius, synced_y * radius, handle_radius * 0.5, handle_radius * 0.5, 0, 0, 7);
-      ctx.save();
-      ctx.fillStyle = "red";
-      ctx.fill();
-      ctx.restore();
       ctx.font = `bold ${handle_radius}px Bespoke Sans`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.globalCompositeOperation = "destination-out";
-      ctx.fillText(label, stick_x * radius, stick_y * radius);
+      ctx.fillText(label, x * radius, y * radius);
       ctx.globalCompositeOperation = "source-over";
     }
   };
@@ -548,7 +514,7 @@ function create_icon_button(client, on_press, options) {
   function render_status() {
     let text = "null";
     if (remote.driver.is_connected && remote.ping > 0) {
-      text = `${remote.driver.name}: ${Math.round(remote.ping)}ms`;
+      text = `${remote.driver.name}: ${Math.round(remote.ping)}ms ${Math.round(remote.received_pings / remote.sent_pings * 100)}%`;
       ctx.globalAlpha = 0.25;
     } else {
       text = `${remote.driver.name}: ${remote.driver.get_status()}`;

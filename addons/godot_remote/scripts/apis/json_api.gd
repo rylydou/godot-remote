@@ -2,7 +2,11 @@ extends 'res://addons/godot_remote/scripts/types/api.gd'
 
 
 func handle_packet(peer_id: int, data: Variant) -> void:
+	if data is PackedByteArray:
+		data = (data as PackedByteArray).get_string_from_utf8()
+	
 	# prints(peer_id, data)
+	
 	if typeof(data) != TYPE_STRING: return
 	var text := data as String
 	
@@ -71,7 +75,8 @@ func _handle_joy_input(peer_id: int, dict: Dictionary, id: String) -> void:
 	if not dict.has('y'): return
 	var x: float = dict['x'] # TYPE TRUST
 	var y: float = dict['y'] # TYPE TRUST
-	receive_input_joy.emit(peer_id, id, x, y)
+	var t: int = dict['t'] # TYPE TRUST
+	receive_input_joy.emit(peer_id, id, x, y, t)
 
 # ---------------------------------------------------------------------------- #
 
@@ -84,14 +89,14 @@ func send_json_unreliable(peer_id: int, data: Variant) -> void:
 
 
 func send_ping(peer_id: int, sts: int) -> void:
-	send_json_reliable(peer_id, {
+	send_json_unreliable(peer_id, {
 		'_': 'ping',
 		'sts': sts,
 	})
 
 
 func send_pong(peer_id: int, sts: int, rts: int) -> void:
-	send_json_reliable(peer_id, {
+	send_json_unreliable(peer_id, {
 		'_': 'pong',
 		'sts': sts,
 		'rts': rts,

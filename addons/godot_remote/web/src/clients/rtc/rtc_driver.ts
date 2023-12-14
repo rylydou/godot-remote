@@ -1,6 +1,7 @@
 import { Client } from '../../client'
 import { RtcSignalProtocol } from './rtc_signal_protocol'
 
+
 export function rtc_driver(protocol: RtcSignalProtocol, driver: Client) {
 	let peer_id: number
 	let peer: RTCPeerConnection | null = null
@@ -63,7 +64,7 @@ export function rtc_driver(protocol: RtcSignalProtocol, driver: Client) {
 				update_connection_state()
 			}
 			reliable_channel.onmessage = (ev) => {
-				console.log('[RTC] Reliable message:', ev.data)
+				// console.log('[RTC] Reliable message:', ev.data)
 				client.on_message?.(ev.data)
 			}
 
@@ -96,6 +97,7 @@ export function rtc_driver(protocol: RtcSignalProtocol, driver: Client) {
 						event.candidate.candidate,
 						event.candidate.sdpMid || '',
 						event.candidate.sdpMLineIndex || 0,
+						event.candidate.usernameFragment || '',
 					))
 				}
 				else {
@@ -110,16 +112,21 @@ export function rtc_driver(protocol: RtcSignalProtocol, driver: Client) {
 
 			protocol.on_description = async (type, sdp) => {
 				console.log(`[RTC] Received ${type}:`, sdp)
-				// await new Promise((resolve) => setTimeout(resolve, 3000))
-				console.log('[RTC] Setting desc')
+				// await new Promise((resolve) => setTimeout(resolve, 2000))
+				// console.log('[RTC] Setting desc')
 				const desc = new RTCSessionDescription({ type: type as RTCSdpType, sdp })
 				peer!.setRemoteDescription(desc)
 			}
 
-			protocol.on_candidate = async (candidate, sdp_mid, sdp_index) => {
-				// await new Promise<void>((resolve) => setTimeout(resolve, 2000))
+			protocol.on_candidate = async (candidate, sdp_mid, sdp_index, ufrag) => {
 				console.log('[RTC] Received candidate:', { candidate, sdp_mid, sdp_index })
-				peer!.addIceCandidate({ candidate, sdpMid: sdp_mid, sdpMLineIndex: sdp_index, /* usernameFragment: name */ })
+				await new Promise<void>((resolve) => setTimeout(resolve, 2000))
+				peer!.addIceCandidate({
+					candidate: candidate,
+					sdpMid: sdp_mid,
+					sdpMLineIndex: sdp_index,
+					usernameFragment: ufrag,
+				})
 			}
 
 			console.log('[RTC] Creating offer.')

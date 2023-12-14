@@ -13,7 +13,8 @@ export interface Remote {
 
 	session_id: number
 
-	ongoing_pings: number
+	sent_pings: number
+	received_pings: number
 	pong_timestamp: number
 	ping: number
 
@@ -61,17 +62,20 @@ export async function create_remote() {
 	protocol.on_pong = (sts, rts) => {
 		const now = Date.now()
 		const ping = now - sts
-		client.ongoing_pings--
 		client.ping = ping
 		client.pong_timestamp = now
+		client.received_pings++
 		client.on_status_change?.()
 	}
 
-	driver.on_open = () => {
+	driver.on_open = async () => {
 		console.log('[Client] Connected.')
-		client.ongoing_pings = 0
+		client.sent_pings = 0
+		client.received_pings = 0
 		client.ping = 0
 		client.pong_timestamp = 0
+
+		await new Promise<void>((resolve) => setTimeout(resolve, 2000))
 
 		client.driver.send_reliable(client.protocol.session(client.session_id))
 	}
@@ -87,7 +91,7 @@ export async function create_remote() {
 
 	setInterval(() => {
 		if (!driver.is_connected) return
-		if (client.ongoing_pings > 0) return
+		// if (client.ongoing_pings > 0) return
 
 		client.ping_server()
 	}, PING_TIME)
@@ -107,13 +111,14 @@ export async function create_remote() {
 
 		session_id,
 
-		ongoing_pings: 0,
+		sent_pings: 0,
+		received_pings: 0,
 		pong_timestamp: 0,
 		ping: 0,
 
 		ping_server() {
-			client.ongoing_pings++
-			client.protocol.ping(Date.now())
+			client.sent_pings++
+			driver.send_unreliable(client.protocol.ping(Date.now()))
 		},
 	}
 
