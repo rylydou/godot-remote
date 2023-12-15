@@ -1,6 +1,7 @@
 import { Remote } from '../remote'
 import { Widget } from '../widget'
 import { Context, vec } from '../../core'
+import { ref } from '..'
 
 
 export interface MenuButtonOptions {
@@ -23,8 +24,8 @@ export class MenuButton extends Widget {
 	private _is_active = false
 
 
-	constructor(remote: Remote, options: MenuButtonOptions) {
-		super(remote)
+	constructor(remote: Remote, id: ref, options: MenuButtonOptions) {
+		super(remote, id)
 
 		this.cx = options.cx
 		this.cy = options.cy

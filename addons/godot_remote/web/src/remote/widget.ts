@@ -1,13 +1,16 @@
+import { ref } from '.'
 import { Context } from '../core'
 import { Remote } from './remote'
 
 
 export class Widget {
 	remote: Remote
+	id: ref
 
 
-	constructor(remote: Remote) {
+	constructor(remote: Remote, id: ref) {
 		this.remote = remote
+		this.id = id
 	}
 
 

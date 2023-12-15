@@ -8,7 +8,7 @@ async function main() {
 
 	const engine = new Engine(canvas)
 	engine.scale = 16.0
-	fill_canvas(canvas, engine.queue_redraw)
+	fill_canvas(canvas, () => engine.queue_redraw())
 	engine.plugin_stack = [
 		'remote',
 		'debug',
@@ -17,7 +17,6 @@ async function main() {
 	const remote = new Remote(engine.create_plugin('remote'))
 	const debug = new Debug(engine.create_plugin('debug'), remote)
 
-	engine.queue_redraw.bind(engine)
 	engine.queue_redraw()
 }
 

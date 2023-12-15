@@ -24,13 +24,13 @@ export class Engine {
 		// @ts-ignore
 		this.ctx = canvas_ctx
 
-		canvas.addEventListener('pointerdown', this.pointer_down)
-		canvas.addEventListener('pointermove', this.pointer_move)
-		canvas.addEventListener('pointerup', this.pointer_up)
+		canvas.addEventListener('pointerdown', (ev) => this.pointer_down(ev))
+		canvas.addEventListener('pointermove', (ev) => this.pointer_move(ev))
+		canvas.addEventListener('pointerup', (ev) => this.pointer_up(ev))
 	}
 
 
-	create_plugin = (id: string): Plugin => {
+	create_plugin(id: string): Plugin {
 		const plugin: Plugin = {
 			engine: this,
 			id: id,
@@ -47,14 +47,16 @@ export class Engine {
 	}
 
 
-	plugin_stack_iter = (): Plugin[] => {
-		return this.plugin_stack
-			.map((value) => this.plugins.get(value))
-			.filter((value) => value) as Plugin[]
+	*plugin_stack_iter(): Generator<Plugin> {
+		for (const plugin_id of this.plugin_stack) {
+			const plugin = this.plugins.get(plugin_id)
+			if (!plugin) continue
+			yield plugin
+		}
 	}
 
 
-	transform_event = (event: { x: number, y: number }): [number, number] => {
+	transform_event(event: { x: number, y: number }): [number, number] {
 		return [
 			event.x / this.scale * window.devicePixelRatio,
 			event.y / this.scale * window.devicePixelRatio
@@ -63,17 +65,17 @@ export class Engine {
 
 
 	private _is_redraw_queued = false
-	queue_redraw = (): void => {
+	queue_redraw(): void {
 		if (this._is_redraw_queued) return
 		this._is_redraw_queued = true
 
-		requestAnimationFrame(this.draw)
+		requestAnimationFrame((time) => this.draw())
 	}
 
 
 	private _canvas_w = -1
 	private _canvas_h = -1
-	draw = (): void => {
+	draw(): void {
 		this._is_redraw_queued = false
 
 
@@ -103,9 +105,9 @@ export class Engine {
 	}
 
 
-	pointer_down = (event: PointerEvent): void => {
+	pointer_down(event: PointerEvent): void {
 		const [px, py] = this.transform_event(event)
-		for (const plugin of this.plugin_stack_iter().reverse()) {
+		for (const plugin of this.plugin_stack_iter()) {
 			if (!plugin.pointer_down) continue
 			const is_handled = plugin.pointer_down(event.pointerId, px, py)
 			if (is_handled) return
@@ -113,17 +115,17 @@ export class Engine {
 	}
 
 
-	pointer_move = (event: PointerEvent): void => {
+	pointer_move(event: PointerEvent): void {
 		const [px, py] = this.transform_event(event)
-		for (const plugin of this.plugin_stack_iter().reverse()) {
+		for (const plugin of this.plugin_stack_iter()) {
 			plugin.pointer_move?.(event.pointerId, px, py)
 		}
 	}
 
 
-	pointer_up = (event: PointerEvent): void => {
+	pointer_up(event: PointerEvent): void {
 		const [px, py] = this.transform_event(event)
-		for (const plugin of this.plugin_stack_iter().reverse()) {
+		for (const plugin of this.plugin_stack_iter()) {
 			plugin.pointer_up?.(event.pointerId, px, py)
 		}
 	}

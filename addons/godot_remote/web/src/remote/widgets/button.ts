@@ -1,6 +1,7 @@
 import { Remote } from '../remote'
 import { Widget } from '../widget'
 import { Context, vec } from '../../core'
+import { ref } from '..'
 
 
 export interface ButtonOptions {
@@ -28,8 +29,8 @@ export class Button extends Widget {
 	private _is_active = false
 
 
-	constructor(remote: Remote, options: ButtonOptions) {
-		super(remote)
+	constructor(remote: Remote, id: ref, options: ButtonOptions) {
+		super(remote, id)
 
 		this.cx = options.cx
 		this.cy = options.cy

@@ -1,3 +1,6 @@
 export * from './debug'
+export * from './driver'
+export * from './protocol'
 export * from './remote'
 export * from './widget'
+export * as Config from './config'

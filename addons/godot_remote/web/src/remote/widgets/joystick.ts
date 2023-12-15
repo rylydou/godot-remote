@@ -1,4 +1,4 @@
-import { Remote, Widget } from '..'
+import { Remote, Widget, ref } from '..'
 import { Context, vec } from '../../core'
 
 
@@ -34,8 +34,8 @@ export class Joystick extends Widget {
 	private _is_active = false
 
 
-	constructor(remote: Remote, options: JoystickOptions) {
-		super(remote)
+	constructor(remote: Remote, id: ref, options: JoystickOptions) {
+		super(remote, id)
 
 		this.cx = options.cx
 		this.cy = options.cy
@@ -53,6 +53,14 @@ export class Joystick extends Widget {
 
 	is_inside = (x: number, y: number): boolean => {
 		return vec.distance_sqr(this.cx, this.cy, x, y) <= (this.r + this.pad) * (this.r + this.pad)
+	}
+
+
+	tick = (): void => {
+	}
+
+	sync = (): void => {
+		this.remote.driver.send_unreliable(this.remote.protocol.input_joy_move(0, this.stick_x, this.stick_y))
 	}
 
 
