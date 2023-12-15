@@ -1,29 +1,3 @@
-export function scale_canvas(canvas: HTMLCanvasElement) {
-	const parent = canvas.parentElement
-	if (!parent) throw new Error('This canvas has no parent.')
-
-	const resize_observer = new ResizeObserver(
-		(entries, observer) => {
-			_scale_resize(canvas, entries[0])
-		}
-	)
-
-	resize_observer.observe(parent)
-
-	return {
-		destroy() {
-			resize_observer.disconnect()
-		}
-	}
-}
-
-function _scale_resize(canvas: HTMLCanvasElement, entry: ResizeObserverEntry): void {
-	let scale = Math.min(entry.contentBoxSize[0].inlineSize / canvas.width, entry.contentBoxSize[0].blockSize / canvas.height)
-	scale = Math.floor(scale)
-	canvas.style.width = canvas.width * scale + 'px'
-	canvas.style.height = canvas.height * scale + 'px'
-}
-
 export function fill_canvas(canvas: HTMLCanvasElement, resized?: () => void) {
 	const parent = canvas.parentElement
 	if (!parent) throw new Error('This canvas has no parent.')
@@ -47,6 +21,7 @@ export function fill_canvas(canvas: HTMLCanvasElement, resized?: () => void) {
 		}
 	}
 }
+
 
 // based from: https://webglfundamentals.org/webgl/lessons/webgl-resizing-the-canvas.html
 function _fill_resize(canvas: HTMLCanvasElement, entry: ResizeObserverEntry): void {

@@ -38,7 +38,7 @@ func handle_packet(peer_id: int, data: Variant) -> void:
 			if not dict.has('sid'): return
 			var session_id: int = dict['sid'] # TYPE TRUST
 			receive_session.emit(peer_id, session_id)
-		_: print('[JSON API] Unknown packet type from #',peer_id,': ', type)
+		_: print('[JSON API] Unknown packet type from #',peer_id,': ',type)
 
 
 func _handle_input_packet(peer_id: int, dict: Dictionary) -> void:
