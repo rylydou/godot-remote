@@ -51,16 +51,18 @@ export class Joystick extends Widget {
 	}
 
 
-	is_inside = (x: number, y: number): boolean => {
-		return vec.distance_sqr(this.cx, this.cy, x, y) <= (this.r + this.pad) * (this.r + this.pad)
-	}
-
-
 	tick = (): void => {
+		this.sync()
 	}
+
 
 	sync = (): void => {
-		this.remote.driver.send_unreliable(this.remote.protocol.input_joy_move(0, this.stick_x, this.stick_y))
+		this.remote.driver.send_unreliable(this.remote.protocol.input_joy_move(this.id, this.stick_x, this.stick_y))
+	}
+
+
+	is_inside = (x: number, y: number): boolean => {
+		return vec.distance_sqr(this.cx, this.cy, x, y) <= (this.r + this.pad) * (this.r + this.pad)
 	}
 
 

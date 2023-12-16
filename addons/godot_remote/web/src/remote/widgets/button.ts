@@ -42,6 +42,11 @@ export class Button extends Widget {
 	}
 
 
+	sync = (): void => {
+		this.remote.driver.send_reliable(this.remote.protocol.input_btn(this.id, this._is_active))
+	}
+
+
 	is_inside = (x: number, y: number): boolean => {
 		return vec.distance_sqr(this.cx, this.cy, x, y) <= this.r * this.r
 	}

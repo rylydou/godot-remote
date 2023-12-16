@@ -1,4 +1,4 @@
-export type ConnectionState = "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new"
+export type ConnectionState = 'unknown' | 'closed' | 'connected' | 'connecting' | 'disconnected' | 'failed' | 'new'
 
 
 export abstract class Driver {
@@ -16,15 +16,8 @@ export abstract class Driver {
 	}
 
 
-	status = ''
-	on_status_changed?: (status: string) => void
-
-	set_status(status: string): void {
-		if (status === this.status) return
-		this.status = status
-		this.on_status_changed?.(status)
-	}
-
+	on_status_changed?: () => void
+	readonly abstract get_status: () => string
 
 	readonly abstract connect: () => Promise<void>
 	readonly abstract disconnect: () => Promise<void>

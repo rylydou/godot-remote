@@ -1,5 +1,7 @@
 export class SignalingProtocol {
 	parse_message(message: any): void {
+		console.log(message)
+
 		const dict = JSON.parse(message)
 
 		if (!dict) {
@@ -13,9 +15,6 @@ export class SignalingProtocol {
 		}
 
 		switch (dict._) {
-			// case 'ready':
-			// this.on_ready?.(dict.peer_id)
-			// break
 			case 'description':
 				this.on_description?.(dict.type, dict.sdp)
 				break
@@ -28,7 +27,7 @@ export class SignalingProtocol {
 		}
 	}
 
-	// on_ready?: (peer_id: number) => void
+
 	on_description?: (type: string, sdp: string) => void
 	on_candidate?: (candidate: string, sdp_mid: string, sdp_index: number, ufrag: string) => void
 
@@ -40,6 +39,7 @@ export class SignalingProtocol {
 			sdp,
 		})
 	}
+
 
 	candidate(candidate: string, sdp_mid: string, sdp_index: number, ufrag: string): string {
 		return JSON.stringify({

@@ -15,35 +15,45 @@ func handle_packet(peer_id: int, data: Variant) -> void:
 	
 	var dict: Dictionary = json
 	
-	if not dict.has('_'): return
-	var type = str(dict['_'])
+	var type = dict.get('_')
+	if not(type is String):
+		printerr('[JSON] packet is missing type or it is wrong')
+		return
 	
 	match type:
 		'ping':
-			if not dict.has('sts'): return
-			var sts: int = dict['sts'] # TYPE TRUST
+			var sts = dict.get('sts')
+			if not(sts is float): return
 			receive_ping.emit(peer_id, sts)
+		
 		'pong':
-			if not dict.has('sts'): return
-			if not dict.has('rts'): return
-			var sts: int = dict['sts'] # TYPE TRUST
-			var rts: int = dict['rts'] # TYPE TRUST
+			var sts = dict.get('sts')
+			var rts = dict.get('rts')
+			if not(sts is float): return
+			if not(rts is float): return
 			receive_pong.emit(peer_id, sts, rts)
-		'input': _handle_input_packet(peer_id, dict)
+		
+		'input':
+			_handle_input_packet(peer_id, dict)
+		
 		'name':
-			if not dict.has('name'): return
-			var username := str(dict['name'])
+			var username = dict.get('name')
+			if not(username is String): return
 			receive_name.emit(peer_id, username)
+		
 		'session':
-			if not dict.has('sid'): return
-			var session_id: int = dict['sid'] # TYPE TRUST
+			var session_id = dict.get('sid')
+			if not(session_id is float): return
 			receive_session.emit(peer_id, session_id)
-		_: print('[JSON API] Unknown packet type from #',peer_id,': ',type)
+		
+		_: print('[JSON] unknown packet type from #',peer_id,': ',type)
 
 
 func _handle_input_packet(peer_id: int, dict: Dictionary) -> void:
-	if not dict.has('id'): return
-	var id := str(dict['id'])
+	var id = str(dict.get('id'))
+	if not(id is String):
+		printerr('input id is wrong: ', typeof(id))
+		return
 	
 	# TODO: LAYOUT SYSTEM
 	match id:
@@ -59,23 +69,22 @@ func _handle_input_packet(peer_id: int, dict: Dictionary) -> void:
 
 
 func _handle_btn_input(peer_id: int, dict: Dictionary, id: String) -> void:
-	if not dict.has('d'): return
-	var down: bool = dict['d'] # TYPE TRUST
+	var down = dict.get('d')
+	if not(down is bool): return
 	receive_input_btn.emit(peer_id, id, down)
 
 
 func _handle_axis_input(peer_id: int, dict: Dictionary, id: String) -> void:
-	if not dict.has('v'): return
-	var value: float = dict['v'] # TYPE TRUST
+	var value = dict.get('v')
+	if not(value is float): return
 	receive_input_axis.emit(peer_id, id, value)
 
 
 func _handle_joy_input(peer_id: int, dict: Dictionary, id: String) -> void:
-	if not dict.has('x'): return
-	if not dict.has('y'): return
-	var x: float = dict['x'] # TYPE TRUST
-	var y: float = dict['y'] # TYPE TRUST
-	var t: int = dict['t'] # TYPE TRUST
+	var x = dict.get('x')
+	var y = dict.get('y')
+	var t = dict.get('t', 0.0)
+	if not(x is float and y is float and t is float): return
 	receive_input_joy.emit(peer_id, id, x, y, t)
 
 # ---------------------------------------------------------------------------- #

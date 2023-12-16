@@ -14,7 +14,7 @@ var move_input: Vector2
 func _ready() -> void:
 	var rng = RandomNumberGenerator.new()
 	rng.seed = controller.session_id
-	modulate = Color.from_hsv(rng.randf(), 1.0, 1.0)
+	modulate = Color.from_ok_hsl(rng.randf(), 1.0, 0.75)
 
 func _process(delta: float) -> void:
 	move_input = controller.get_joy('l')

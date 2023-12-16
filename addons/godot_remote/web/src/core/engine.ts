@@ -25,8 +25,8 @@ export class Engine {
 		this.ctx = canvas_ctx
 
 		canvas.addEventListener('pointerdown', (ev) => this.pointer_down(ev))
-		canvas.addEventListener('pointermove', (ev) => this.pointer_move(ev))
-		canvas.addEventListener('pointerup', (ev) => this.pointer_up(ev))
+		window.addEventListener('pointermove', (ev) => this.pointer_move(ev))
+		window.addEventListener('pointerup', (ev) => this.pointer_up(ev))
 	}
 
 

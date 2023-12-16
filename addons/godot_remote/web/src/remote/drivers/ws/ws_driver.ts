@@ -13,43 +13,60 @@ export class WSDriver extends Driver {
 		super()
 		if (address === '' || address.startsWith('$')) {
 			address = `ws://${location.hostname}:8081`
-			console.warn(`[ws] no address is defined - assuming '${address}' which may not be correct`)
+			console.warn(`[WS] no address is defined. assuming '${address}' which may not be correct`)
 		}
 		this.address = address
 	}
 
-
-	connect = async (): Promise<void> => {
-		console.log(`[ws] connecting to '${this.address}'`)
-		this._ws = new WebSocket(this.address)
-		this.set_connection('connecting')
-
-		this._ws.onopen = (ev) => {
-			console.log(`[ws] opened`)
-			this.set_connection('connected')
-			this.on_opened?.()
+	readonly get_status = (): string => {
+		if (!this._ws) return 'uninitialized'
+		switch (this._ws.readyState) {
+			case 0: return 'connecting'
+			case 1: return 'open'
+			case 2: return 'closing'
+			case 3: return 'closed'
 		}
-
-		this._ws.onclose = (ev) => {
-			console.log(`[ws] closed`)
-			if (this.connection_state != 'failed')
-				this.set_connection('closed')
-			this.on_opened?.()
-		}
-
-		this._ws.onerror = (ev) => {
-			console.error(`[ws] error`, ev)
-			this.set_connection('failed')
-			this.set_status('error: ' + ev)
-			this.on_error?.(ev)
-			this.disconnect()
-		}
-
-		this._ws.onmessage = (message) => this.on_message_received?.(message)
+		return 'unknown'
 	}
 
+
+	connect = async (): Promise<void> => {
+		return new Promise(resolve => {
+			console.log(`[WS] connecting to '${this.address}'`)
+			this._ws = new WebSocket(this.address)
+			this.set_connection('connecting')
+
+			this._ws.onopen = (ev) => {
+				console.log(`[WS] opened`)
+				this.on_status_changed?.()
+				this.set_connection('connected')
+				this.on_opened?.()
+				resolve()
+			}
+
+			this._ws.onclose = (ev) => {
+				console.log(`[WS] closed`)
+				this.on_status_changed?.()
+				if (this.connection_state != 'failed')
+					this.set_connection('closed')
+				this.on_opened?.()
+			}
+
+			this._ws.onerror = (ev) => {
+				console.error(`[WS] error`)
+				this.on_status_changed?.()
+				this.set_connection('failed')
+				this.on_error?.(ev)
+				this.disconnect()
+			}
+
+			this._ws.onmessage = (ev) => this.on_message_received?.(ev.data)
+		})
+	}
+
+
 	disconnect = async (): Promise<void> => {
-		console.log(`[ws] disconnecting`)
+		console.log(`[WS] disconnecting`)
 		this._ws?.close()
 	}
 

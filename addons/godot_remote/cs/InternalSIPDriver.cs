@@ -4,6 +4,7 @@ using SIPSorcery.Net;
 using Dict = Godot.Collections.Dictionary;
 using Array = Godot.Collections.Array;
 using System.Net;
+using System;
 
 
 public partial class InternalSIPDriver : RefCounted
@@ -129,6 +130,13 @@ public partial class InternalSIPDriver : RefCounted
 		peer.connection.onconnectionstatechange += (state) =>
 		{
 			GD.Print("[SIP] Change in Connection: ", state.ToString());
+			// switch (state)
+			// {
+			// 	case RTCPeerConnectionState.connected:
+			// 		break;
+			// 	case RTCPeerConnectionState.disconnected:
+			// 		break;
+			// }
 		};
 
 		peer.connection.onsignalingstatechange += () =>
@@ -159,6 +167,11 @@ public partial class InternalSIPDriver : RefCounted
 		{
 			GD.Print("[SIP] Reliable Opened.");
 			EmitSignal(SignalName.client_connected, peer_id);
+
+			// _send_json(peer_id, new Dict() {
+			// 	{"_", "ready"},
+			// 	{"peer_id", peer_id},
+			// });
 		};
 		peer.reliable_channel.onclose += () =>
 		{
@@ -198,13 +211,6 @@ public partial class InternalSIPDriver : RefCounted
 			// GD.Print("[SIP] Unreliable Message: ", data.GetStringFromUtf8());
 			EmitSignal(SignalName.message_received, peer_id, data);
 		};
-
-		// -----
-
-		_send_json(peer_id, new Dict() {
-			{"_", "ready"},
-			{"peer_id", peer_id},
-		});
 	}
 
 
@@ -212,8 +218,12 @@ public partial class InternalSIPDriver : RefCounted
 	{
 		var peer = peers[peer_id];
 		peers.Remove(peer_id);
+
+		peer.reliable_channel.close();
+		peer.unreliable_channel.close();
 		peer.connection.close();
 	}
+
 
 	public void signaling_description(int peer_id, string type, string sdp)
 	{
@@ -242,6 +252,7 @@ public partial class InternalSIPDriver : RefCounted
 			{ "sdp", answer.sdp },
 		});
 	}
+
 
 	public void signaling_candidate(int peer_id, string candidate, string sdp_mid, ushort spd_index, string ufrag)
 	{
@@ -294,6 +305,17 @@ public partial class InternalSIPDriver : RefCounted
 	{
 		var peer = peers[peer_id];
 		return send_channel(peer.unreliable_channel, message);
+	}
+
+
+	public void disconnect_peer(int peer_id, string reason = "")
+	{
+		var peer = peers[peer_id];
+		peers.Remove(peer_id);
+
+		peer.reliable_channel.close();
+		peer.unreliable_channel.close();
+		peer.connection.close();
 	}
 
 

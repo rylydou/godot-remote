@@ -13,7 +13,7 @@ var _driver = InternalSIPDriver.new()
 
 
 func build_http(http_server: HttpServer, file_router: HttpFileRouter) -> void:
-	file_router.secrets['$_CLIENT_$'] = 'RTC'
+	file_router.secrets['$_DRIVER_$'] = 'RTC'
 
 
 func start(port: int) -> int:
@@ -57,6 +57,11 @@ func send_reliable(peer_id: int, message: Variant) -> int:
 
 func send_unreliable(peer_id: int, message: Variant) -> int:
 	return _driver.send_unreliable(peer_id, message)
+
+
+func disconnect_peer(peer_id: int, reason: String = '') -> void:
+	_wss.disconnect_peer(peer_id, reason)
+	_driver.disconnect_peer(peer_id, reason)
 
 
 func poll() -> void:
