@@ -5,7 +5,6 @@ export abstract class Driver {
 	abstract name: string
 
 
-	is_connected = false
 	connection_state: ConnectionState = 'new'
 	on_connection_changed?: (state: ConnectionState) => void
 

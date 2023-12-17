@@ -1,27 +1,32 @@
 import { Remote, Widget, ref } from '..'
-import { Context, vec } from '../../core'
+import { Context, math, vec } from '../../core'
 
 
 export interface JoystickOptions {
+	label?: string
+
 	cx: number
 	cy: number
-	r?: number
-	pad?: number
+	touch_radius?: number
+	track_radius?: number
 
-	label?: string
+	ring_radius?: number
+
 
 	stick_radius?: number
 }
 
 
 export class Joystick extends Widget {
+	label?: string
+
 	cx: number
 	cy: number
-	r: number
-	pad: number
-	thickness: number
+	touch_radius: number
+	track_radius: number
 
-	label?: string
+	ring_radius: number
+	ring_thickness: number
 
 	stick_radius: number
 	stick_outline: number
@@ -37,13 +42,15 @@ export class Joystick extends Widget {
 	constructor(remote: Remote, id: ref, options: JoystickOptions) {
 		super(remote, id)
 
+		this.label = options?.label
+
 		this.cx = options.cx
 		this.cy = options.cy
-		this.r = options?.r || 3
-		this.pad = options.pad || 1
-		this.thickness = 0.5
+		this.touch_radius = options?.touch_radius || 10
+		this.track_radius = options?.track_radius || 2
 
-		this.label = options?.label
+		this.ring_radius = 5
+		this.ring_thickness = 0.5
 
 		this.stick_radius = options.stick_radius || 3
 		this.stick_outline = 0.5
@@ -61,19 +68,20 @@ export class Joystick extends Widget {
 	}
 
 
-	is_inside = (x: number, y: number): boolean => {
-		return vec.distance_sqr(this.cx, this.cy, x, y) <= (this.r + this.pad) * (this.r + this.pad)
+	is_inside_touch = (x: number, y: number): boolean => {
+		return vec.distance_sqr(this.cx, this.cy, x, y) <= math.sqr(this.touch_radius)
 	}
 
 
 	down = (pid: number, px: number, py: number): boolean => {
 		if (this._is_active) return false
-		if (!this.is_inside(px, py)) return false
+		if (!this.is_inside_touch(px, py)) return false
 
 		this._is_active = true
 		this._pid = pid
 
 		this.move(pid, px, py)
+		this.remote.driver.send_reliable(this.remote.protocol.input_joy_down(this.id, this.stick_x, this.stick_y))
 		this.sync()
 		return true
 	}
@@ -84,8 +92,8 @@ export class Joystick extends Widget {
 		if (this._pid != pid) return
 
 		// Center and remap to -1/+1
-		this.stick_x = (px - this.cx) / this.r
-		this.stick_y = (py - this.cy) / this.r
+		this.stick_x = (px - this.cx) / this.track_radius
+		this.stick_y = (py - this.cy) / this.track_radius
 
 		// Clamp the length
 		'i ♥️ js';[this.stick_x, this.stick_y] = vec.clamp_length(this.stick_x, this.stick_y, 1)
@@ -102,23 +110,24 @@ export class Joystick extends Widget {
 		this.stick_y = 0
 
 		this._is_active = false
-		this.sync()
 
+		this.remote.driver.send_reliable(this.remote.protocol.input_joy_up(this.id, this.stick_x, this.stick_y))
+		this.sync()
 		this.remote.queue_redraw()
 	}
 
 
 	draw = (ctx: Context): void => {
-		const stick_px = this.stick_x * this.r
-		const stick_py = this.stick_y * this.r
+		const stick_px = this.stick_x * this.track_radius
+		const stick_py = this.stick_y * this.track_radius
 
 		ctx.translate(this.cx, this.cy)
 		ctx.lineCap = 'round'
 
 		// Joystick Bounds Ring
 		ctx.beginPath()
-		ctx.ellipse(0, 0, this.r + this.pad, this.r + this.pad, 0, 0, 7)
-		ctx.lineWidth = this.thickness
+		ctx.ellipse(0, 0, this.ring_radius, this.ring_radius, 0, 0, 7)
+		ctx.lineWidth = this.ring_thickness
 		ctx.stroke()
 
 		// Stick Handle Outline

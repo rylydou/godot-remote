@@ -22,16 +22,14 @@ func handle_packet(peer_id: int, data: Variant) -> void:
 	
 	match type:
 		'ping':
-			var sts = dict.get('sts')
-			if not(sts is float): return
-			receive_ping.emit(peer_id, sts)
+			var timestamp = dict.get('t')
+			if not(timestamp is float): return
+			receive_ping.emit(peer_id, timestamp)
 		
 		'pong':
-			var sts = dict.get('sts')
-			var rts = dict.get('rts')
-			if not(sts is float): return
-			if not(rts is float): return
-			receive_pong.emit(peer_id, sts, rts)
+			var timestamp = dict.get('t')
+			if not(timestamp is float): return
+			receive_pong.emit(peer_id, timestamp)
 		
 		'input':
 			_handle_input_packet(peer_id, dict)
@@ -74,12 +72,6 @@ func _handle_btn_input(peer_id: int, dict: Dictionary, id: String) -> void:
 	receive_input_btn.emit(peer_id, id, down)
 
 
-func _handle_axis_input(peer_id: int, dict: Dictionary, id: String) -> void:
-	var value = dict.get('v')
-	if not(value is float): return
-	receive_input_axis.emit(peer_id, id, value)
-
-
 func _handle_joy_input(peer_id: int, dict: Dictionary, id: String) -> void:
 	var x = dict.get('x')
 	var y = dict.get('y')
@@ -92,21 +84,18 @@ func _handle_joy_input(peer_id: int, dict: Dictionary, id: String) -> void:
 func send_json_reliable(peer_id: int, data: Variant) -> void:
 	send_reliable.emit(peer_id, JSON.stringify(data))
 
-
 func send_json_unreliable(peer_id: int, data: Variant) -> void:
 	send_unreliable.emit(peer_id, JSON.stringify(data))
 
 
-func send_ping(peer_id: int, sts: int) -> void:
+func send_ping(peer_id: int, t: int) -> void:
 	send_json_unreliable(peer_id, {
 		'_': 'ping',
-		'sts': sts,
+		't': t,
 	})
 
-
-func send_pong(peer_id: int, sts: int, rts: int) -> void:
+func send_pong(peer_id: int, t: int) -> void:
 	send_json_unreliable(peer_id, {
 		'_': 'pong',
-		'sts': sts,
-		'rts': rts,
+		't': t,
 	})

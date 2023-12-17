@@ -15,6 +15,7 @@ export class Remote extends Engine {
 
 
 	session_id: number
+	tick_rate = 30
 
 
 	constructor(canvas: HTMLCanvasElement) {
@@ -23,11 +24,16 @@ export class Remote extends Engine {
 		if (this.driver_type.startsWith('$')) {
 			this.driver_type = 'WS'
 			console.warn(`[Remote] no driver is defined - assuming '${this.driver_type}' which may not be correct`)
+		} else {
+			console.log('[Remote] driver:', this.driver_type)
 		}
 
 		if (this.protocol_type.startsWith('$')) {
 			this.protocol_type = 'JSON'
 			console.warn(`[Remote] no protocol is defined - assuming '${this.protocol_type}' which may not be correct`)
+		}
+		else {
+			console.log('[Remote] protocol:', this.protocol_type)
 		}
 
 		switch (this.driver_type) {
@@ -36,6 +42,7 @@ export class Remote extends Engine {
 			case 'WS':
 				this.driver = new WSDriver()
 				break
+
 			case 'RTC':
 				this.driver = new RTCDriver()
 				break
@@ -48,29 +55,38 @@ export class Remote extends Engine {
 				this.protocol = new JSONProtocol()
 				break
 
-			case 'BIN':
-				this.protocol = new BinaryProtocol()
+			case 'BIN/JSON':
+				this.protocol = new BinaryProtocol(new JSONProtocol())
 				break
 		}
 
+		this.driver.on_message_received = (message) => this.protocol.parse_message(message)
 		this.driver.on_opened = () => {
-			console.log('opened, sending session id')
+			console.log('[Remote] sending session id')
 			this.driver.send_reliable(this.protocol.session(this.session_id))
 		}
 
-		this.driver.on_message_received = (message) => this.protocol.parse_message(message)
-
 		this.session_id = get_session_id()
+		console.log('[Remote] session id:', this.session_id)
+		this.tick()
 	}
 
 
 	async connect(): Promise<void> {
 		await this.driver.connect()
+
+		for (const plugin of this.plugin_stack_iter()) {
+			(plugin as RemotePlugin).connected?.()
+		}
 	}
 
 
 	async disconnect(): Promise<void> {
 		await this.driver.disconnect()
+
+		for (const plugin of this.plugin_stack_iter()) {
+			(plugin as RemotePlugin).disconnected?.()
+		}
 	}
 
 
@@ -88,5 +104,14 @@ export class Remote extends Engine {
 
 		this.plugins.set(id, plugin)
 		return plugin
+	}
+
+
+	tick() {
+		setTimeout(() => this.tick(), 1000 / this.tick_rate)
+
+		for (const plugin of this.plugin_stack_iter()) {
+			(plugin as RemotePlugin).tick?.()
+		}
 	}
 }

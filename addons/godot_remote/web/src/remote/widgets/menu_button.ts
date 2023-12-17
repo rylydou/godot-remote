@@ -1,7 +1,6 @@
 import { Remote } from '../remote'
 import { Widget } from '../widget'
-import { Context, vec } from '../../core'
-import { ref } from '..'
+import { Context, math, vec } from '../../core'
 
 
 export interface MenuButtonOptions {
@@ -24,8 +23,8 @@ export class MenuButton extends Widget {
 	private _is_active = false
 
 
-	constructor(remote: Remote, id: ref, options: MenuButtonOptions) {
-		super(remote, id)
+	constructor(remote: Remote, options: MenuButtonOptions) {
+		super(remote, '')
 
 		this.cx = options.cx
 		this.cy = options.cy
@@ -36,7 +35,7 @@ export class MenuButton extends Widget {
 
 
 	is_inside = (x: number, y: number): boolean => {
-		return vec.distance_sqr(this.cx, this.cy, x, y) <= this.r * this.r
+		return vec.distance_sqr(this.cx, this.cy, x, y) <= math.sqr(this.r)
 	}
 
 
@@ -97,6 +96,7 @@ export class MenuButton extends Widget {
 				ctx.stroke()
 				break
 
+			case 'none':
 			default:
 				ctx.moveTo(-1.0, -1.0)
 				ctx.lineTo(+1.0, -1.0)

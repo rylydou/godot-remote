@@ -19,22 +19,24 @@ export class Controls {
 		this.plugin.pointer_move = (pid, px, py) => this.pointer_move(pid, px, py)
 		this.plugin.pointer_up = (pid, px, py) => this.pointer_up(pid, px, py)
 
-		window.setInterval(() => {
-			this.tick()
-		}, 1000 / Config.TICK_RATE)
+		this.plugin.tick = () => this.tick()
 	}
 
 
 	resize(ctx: Context): void {
 		this.widgets = [
-			new MenuButton(this.plugin.engine, 'menu', { icon: 'menu', cx: 2, cy: 2 }),
-			new MenuButton(this.plugin.engine, 'pause', { icon: 'pause', cx: ctx.w - 2, cy: 2 }),
+			new MenuButton(this.plugin.engine, { icon: 'menu', cx: 2, cy: 2 }),
+			new MenuButton(this.plugin.engine, { icon: 'pause', cx: ctx.w - 2, cy: 2 }),
 			new Joystick(this.plugin.engine, 'l', { label: 'L', cx: 8, cy: ctx.h - 8, r: 4, pad: 1 }),
 			new Button(this.plugin.engine, 'a', { label: 'A', cx: ctx.w - 4, cy: ctx.h - 9 }),
 			new Button(this.plugin.engine, 'b', { label: 'B', cx: ctx.w - 9, cy: ctx.h - 4 }),
 			new Button(this.plugin.engine, 'x', { label: 'X', cx: ctx.w - 9, cy: ctx.h - 14 }),
 			new Button(this.plugin.engine, 'y', { label: 'Y', cx: ctx.w - 14, cy: ctx.h - 9 }),
 		]
+
+		for (const widget of this.widgets) {
+			widget.sync()
+		}
 	}
 
 

@@ -1,6 +1,5 @@
 // Networking
-export const TICK_RATE = 60
-export const PING_BTW_MS = 1000
+export const PING_BTW_MS = 250
 
 
 // Storage

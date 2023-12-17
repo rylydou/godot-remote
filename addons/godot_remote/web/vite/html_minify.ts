@@ -1,6 +1,7 @@
 import { Plugin } from 'vite'
 import { minify, Options } from 'html-minifier-terser'
 
+
 export function minify_html(options?: Options): Plugin {
 	return {
 		name: 'minify-html',

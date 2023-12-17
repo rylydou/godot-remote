@@ -2,13 +2,16 @@ import { Context, Plugin, } from '.'
 
 
 export class Engine {
-	canvas: HTMLCanvasElement
-	ctx: Context
+	readonly canvas: HTMLCanvasElement
+	readonly ctx: Context
 
 	plugins = new Map<string, Plugin>()
 	plugin_stack: string[] = []
 
 	scale = 1.0
+
+
+	screen_log: string[] = []
 
 
 	constructor(canvas: HTMLCanvasElement) {
@@ -24,9 +27,24 @@ export class Engine {
 		// @ts-ignore
 		this.ctx = canvas_ctx
 
-		canvas.addEventListener('pointerdown', (ev) => this.pointer_down(ev))
-		window.addEventListener('pointermove', (ev) => this.pointer_move(ev))
-		window.addEventListener('pointerup', (ev) => this.pointer_up(ev))
+		canvas.addEventListener('pointerdown', (ev) => {
+			ev.preventDefault()
+		})
+		window.addEventListener('pointerdown', (ev) => {
+			ev.preventDefault()
+			this.pointer_down(ev)
+		})
+		window.addEventListener('pointermove', (ev) => {
+			ev.preventDefault()
+			this.pointer_move(ev)
+		})
+		window.addEventListener('pointerup', (ev) => {
+			ev.preventDefault()
+			this.pointer_up(ev)
+		})
+		canvas.addEventListener('touchstart', (ev) => {
+			ev.preventDefault()
+		})
 	}
 
 
@@ -58,8 +76,8 @@ export class Engine {
 
 	transform_event(event: { x: number, y: number }): [number, number] {
 		return [
-			event.x / this.scale * window.devicePixelRatio,
-			event.y / this.scale * window.devicePixelRatio
+			event.x / this.scale,
+			event.y / this.scale,
 		]
 	}
 
@@ -77,7 +95,6 @@ export class Engine {
 	private _canvas_h = -1
 	draw(): void {
 		this._is_redraw_queued = false
-
 
 		const ctx = this.ctx
 		ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
@@ -109,7 +126,7 @@ export class Engine {
 		const [px, py] = this.transform_event(event)
 		for (const plugin of this.plugin_stack_iter()) {
 			if (!plugin.pointer_down) continue
-			const is_handled = plugin.pointer_down(event.pointerId, px, py)
+			const is_handled = plugin.pointer_down?.(event.pointerId, px, py)
 			if (is_handled) return
 		}
 	}

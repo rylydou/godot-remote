@@ -9,17 +9,17 @@ async function main() {
 
 	const engine = new Remote(canvas)
 	engine.scale = 16.0
-	fill_canvas(canvas, () => engine.queue_redraw())
 	engine.plugin_stack = [
-		'controls',
-		'ping',
-		'debug',
+		'Controls',
+		'Ping',
+		'Debug',
 	]
 
-	const debug = new Debug(engine.create_plugin('debug'))
-	const ping = new Ping(engine.create_plugin('ping'))
-	const controls = new Controls(engine.create_plugin('controls'))
+	const debug = new Debug(engine.create_plugin('Debug'))
+	const ping = new Ping(engine.create_plugin('Ping'))
+	const controls = new Controls(engine.create_plugin('Controls'))
 
+	fill_canvas(canvas, () => engine.queue_redraw())
 	engine.queue_redraw()
 	engine.connect()
 }

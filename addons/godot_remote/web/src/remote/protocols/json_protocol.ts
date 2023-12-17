@@ -2,23 +2,23 @@ import { RemoteProtocol, ref } from '..'
 
 
 export class JSONProtocol extends RemoteProtocol {
-	readonly parse_message = (message: any): void => {
+	override parse_message(message: any): void {
 		const dict = JSON.parse(message)
 		if (!dict) {
-			console.error('[json] cannot parse message - the message is not valid json')
+			console.error('[JSON] cannot parse message - the message is not valid json')
 			return
 		}
 		if (!dict._) {
-			console.error('[json] cannot parse message - the message is missing a type')
+			console.error('[JSON] cannot parse message - the message is missing a type')
 			return
 		}
 
 		switch (dict._) {
 			case 'ping':
-				this.on_ping?.(dict.sts)
+				this.on_ping?.(dict.t)
 				break
 			case 'pong':
-				this.on_pong?.(dict.sts, dict.rts)
+				this.on_pong?.(dict.t)
 				break
 			case 'sync':
 				this.on_sync?.(dict.id)
@@ -39,7 +39,7 @@ export class JSONProtocol extends RemoteProtocol {
 				this.on_clear_banner?.()
 				break
 			default:
-				console.error('[JSON API] Unknown packet type: ', dict._)
+				console.error('[JSON] unknown packet type: ', dict._)
 				break
 		}
 	}
@@ -50,36 +50,35 @@ export class JSONProtocol extends RemoteProtocol {
 	}
 
 
-	readonly ping = (sts: number): any => {
+	override ping(timestamp: number): any {
 		return JSON.stringify({
 			_: 'ping',
-			sts,
+			t: timestamp,
 		})
 	}
 
-	readonly pong = (sts: number, rts: number): any => {
+	override pong(timestamp: number): any {
 		return JSON.stringify({
 			_: 'pong',
-			sts,
-			rts,
+			t: timestamp,
 		})
 	}
 
-	readonly name = (name: string): any => {
+	override name(name: string): any {
 		return JSON.stringify({
 			_: 'name',
 			name,
 		})
 	}
 
-	readonly session = (sid: number): any => {
+	override session(sid: number): any {
 		return JSON.stringify({
 			_: 'session',
 			sid,
 		})
 	}
 
-	readonly layout_ready = (id: ref): any => {
+	override layout_ready(id: ref): any {
 		return JSON.stringify({
 			_: 'layout_ready',
 			id,
@@ -87,52 +86,45 @@ export class JSONProtocol extends RemoteProtocol {
 	}
 
 
-	readonly input_btn = (id: ref, is_down: boolean): any => {
+	override input_btn(id: ref, is_down: boolean): any {
 		return JSON.stringify({
 			_: 'input',
 			id,
+			t: Date.now(),
 			d: is_down,
 		})
 	}
 
-	readonly input_axis = (id: ref, value: number): any => {
-		return JSON.stringify({
-			_: 'input',
-			id,
-			v: this.round(value),
-		})
-	}
-
-	readonly input_joy_down = (id: ref, x: number, y: number): any => {
+	override input_joy_move(id: ref, x: number, y: number): any {
 		return JSON.stringify({
 			_: 'input',
 			id: id,
-			s: 'down',
+			t: Date.now(),
 			x: this.round(x),
 			y: this.round(y),
-			t: Date.now(),
 		})
 	}
 
-	readonly input_joy_move = (id: ref, x: number, y: number): any => {
+	override input_joy_down(id: ref, x: number, y: number): any {
 		return JSON.stringify({
 			_: 'input',
 			id: id,
-			s: 'move',
+			t: Date.now(),
+			d: 'down',
 			x: this.round(x),
 			y: this.round(y),
-			t: Date.now(),
 		})
 	}
 
-	readonly input_joy_up = (id: ref, x: number, y: number): any => {
+
+	override input_joy_up(id: ref, x: number, y: number): any {
 		return JSON.stringify({
 			_: 'input',
 			id: id,
-			s: 'up',
+			t: Date.now(),
+			d: 'up',
 			x: this.round(x),
 			y: this.round(y),
-			t: Date.now(),
 		})
 	}
 }

@@ -16,17 +16,20 @@ export class Debug {
 
 
 	draw = (ctx: Context): void => {
-		if (this.plugin.engine.driver.is_connected)
-			return
+		let texts: string[] = this.plugin.engine.screen_log.slice()
 
-		let texts: string[] = []
-		texts.push(this.plugin.engine.driver.name)
-		texts.push(this.plugin.engine.driver.get_status())
+		if (this.plugin.engine.driver.connection_state != 'connected') {
+			texts.push(this.plugin.engine.driver.name)
+			texts.push(this.plugin.engine.driver.connection_state)
+			// texts.push(this.plugin.engine.driver.get_status())
+		}
+
+		if (texts.length == 0) return
 
 		ctx.textBaseline = 'top'
 		ctx.textAlign = 'center'
 		ctx.font = 'bold 1px monospace'
 		ctx.fillStyle = 'white'
-		ctx.fillText(texts.join(' '), ctx.w / 2, 4, ctx.w * .75)
+		ctx.fillText(texts.join(' '), ctx.w / 2, 2.5, ctx.w * .75)
 	}
 }

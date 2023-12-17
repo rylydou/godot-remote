@@ -1,6 +1,6 @@
 import { Remote } from '../remote'
 import { Widget } from '../widget'
-import { Context, vec } from '../../core'
+import { Context, math, vec } from '../../core'
 import { ref } from '..'
 
 
@@ -48,7 +48,7 @@ export class Button extends Widget {
 
 
 	is_inside = (x: number, y: number): boolean => {
-		return vec.distance_sqr(this.cx, this.cy, x, y) <= this.r * this.r
+		return vec.distance_sqr(this.cx, this.cy, x, y) <= math.sqr(this.r)
 	}
 
 

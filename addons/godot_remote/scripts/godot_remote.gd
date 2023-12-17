@@ -90,7 +90,6 @@ func _connect_signals() -> void:
 	api.receive_ping.connect(_on_receive_ping)
 	api.receive_pong.connect(_on_receive_pong)
 	api.receive_input_btn.connect(_on_receive_input_btn)
-	api.receive_input_axis.connect(_on_receive_input_axis)
 	api.receive_input_joy.connect(_on_receive_input_joy)
 	api.receive_name.connect(_on_receive_name)
 	api.receive_session.connect(_on_receive_session)
@@ -279,12 +278,12 @@ func ping_client(peer_id: int) -> void:
 	api.send_ping(peer_id, api.get_time_msec())
 
 
-func _on_receive_ping(peer_id: int, sts: int) -> void:
+func _on_receive_ping(peer_id: int, timestamp: int) -> void:
 	# print('received ping')
-	api.send_pong(peer_id, sts, api.get_time_msec())
+	api.send_pong(peer_id, timestamp)
 
 
-func _on_receive_pong(peer_id: int, sts: int, rts: int) -> void:
+func _on_receive_pong(peer_id: int, sts: int) -> void:
 	var timestamp := api.get_time_msec()
 	var ping_ms = timestamp - sts
 	var client := get_client(peer_id)
@@ -306,13 +305,6 @@ func _on_receive_input_btn(peer_id: int, id: Variant, is_down: bool) -> void:
 		btn.is_just_pressed = true
 	else:
 		btn.is_just_released = true
-
-
-func _on_receive_input_axis(peer_id: int, id: Variant, value: float) -> void:
-	if get_client(peer_id).session_id == 0: return
-	
-	var axis: AxisInput = get_input_by_peer(peer_id, id)
-	axis.value = value
 
 
 func _on_receive_input_joy(peer_id: int, id: Variant, x: float, y: float, t: int) -> void:
