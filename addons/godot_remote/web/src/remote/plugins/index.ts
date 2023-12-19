@@ -1,2 +1,7 @@
 export * from './controls'
+export * from './debug'
+export * from './leave'
+export * from './menu'
+export * from './name'
 export * from './ping'
+export * from './toasts'

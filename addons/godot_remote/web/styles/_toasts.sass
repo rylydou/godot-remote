@@ -1,0 +1,98 @@
+@keyframes pulse
+	0%
+		inset: 3rem
+		opacity: 0
+	
+	5%
+		opacity: 0
+	
+	25%
+		opacity: 1
+	
+	100%
+		inset: -1rem
+		opacity: 0
+
+
+// BROWSER BUG: This doesn't work in Safari
+@keyframes spin
+	0%
+		rotate: -5deg
+	
+	33%
+		rotate: 0turn
+	
+	100%
+		rotate: calc(3turn - 5deg)
+
+
+#spinner
+	pointer-events: none
+	
+	position: fixed
+	top: 50%
+	left: 50%
+	translate: -50% -50%
+	
+	width: 6rem
+	height: 6rem
+	border-radius: 100%
+	mix-blend-mode: difference
+	
+	&::before,
+	&::after
+		content: ''
+		
+		box-sizing: border-box
+		position: absolute
+		inset: 0
+		opacity: 0
+		
+		border-radius: 100%
+		border: solid 4px white
+		// border-color: transparent white transparent white
+		
+		animation: pulse 1.2s ease-out infinite
+	
+	&::after
+		animation-delay: .3s
+	
+	> span
+		position: absolute
+		bottom: -1rem
+		left: 50%
+		translate: -50% 0
+		font-weight: bold
+	
+	> svg
+		z-index: 1
+		position: absolute
+		inset: 0
+		width: 100%
+		height: 100%
+		
+		rotate: -5deg
+		animation: spin 1.2s ease-in-out infinite
+
+
+#reload
+	position: fixed
+	top: 1rem
+	left: 50%
+	translate: -50% 0
+	
+	font-weight: bold
+	display: flex
+	gap: 1rem
+	align-items: center
+	width: max-content
+	padding: 1rem 2rem
+	
+	color: black
+	background: white
+	box-shadow: 0 .5rem hsl(0 0% 75%)
+	border-radius: 1rem
+	
+	&:active
+		box-shadow: none
+		translate: -50% .5rem

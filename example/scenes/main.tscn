@@ -16,6 +16,7 @@ player_scene = ExtResource("2_ctjkm")
 layer = -1
 
 [node name="Interface" type="MarginContainer" parent="Fixed" node_paths=PackedStringArray("qr_code_rect")]
+texture_filter = 2
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

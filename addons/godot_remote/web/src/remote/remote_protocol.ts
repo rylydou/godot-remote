@@ -16,8 +16,9 @@ export abstract class RemoteProtocol {
 
 	ping(timestamp: number): any { return null }
 	pong(timestamp: number): any { return null }
-	name(name: string): any { return null }
 	session(sid: number): any { return null }
+	name(name: string): any { return null }
+	leave(): any { return null }
 	layout_ready(id: ref): any { return null }
 
 	input_btn(id: ref, is_down: boolean): any { return null }

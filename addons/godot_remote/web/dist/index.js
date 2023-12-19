@@ -285,13 +285,13 @@ class BinView {
     return str;
   }
 }
-function fill_canvas(canvas, resized) {
-  const parent = canvas.parentElement;
+function fill_canvas(canvas2, resized) {
+  const parent = canvas2.parentElement;
   if (!parent)
     throw new Error("This canvas has no parent.");
   const resize_observer = new ResizeObserver(
     (entries, observer) => {
-      _fill_resize(canvas, entries[0]);
+      _fill_resize(canvas2, entries[0]);
       if (resized)
         resized();
     }
@@ -307,47 +307,43 @@ function fill_canvas(canvas, resized) {
     }
   };
 }
-function _fill_resize(canvas, entry) {
+function _fill_resize(canvas2, entry) {
   if (entry.devicePixelContentBoxSize) {
-    canvas.width = Math.round(entry.devicePixelContentBoxSize[0].inlineSize);
-    canvas.height = Math.round(entry.devicePixelContentBoxSize[0].blockSize);
+    canvas2.width = Math.round(entry.devicePixelContentBoxSize[0].inlineSize);
+    canvas2.height = Math.round(entry.devicePixelContentBoxSize[0].blockSize);
     return;
   }
   let dpr = window.devicePixelRatio;
   if (entry.contentBoxSize) {
     if (entry.contentBoxSize[0]) {
-      canvas.width = Math.round(entry.contentBoxSize[0].inlineSize * dpr);
-      canvas.height = Math.round(entry.contentBoxSize[0].blockSize * dpr);
+      canvas2.width = Math.round(entry.contentBoxSize[0].inlineSize * dpr);
+      canvas2.height = Math.round(entry.contentBoxSize[0].blockSize * dpr);
       return;
     }
-    canvas.width = Math.round(entry.contentBoxSize.inlineSize * dpr);
-    canvas.height = Math.round(entry.contentBoxSize.blockSize * dpr);
+    canvas2.width = Math.round(entry.contentBoxSize.inlineSize * dpr);
+    canvas2.height = Math.round(entry.contentBoxSize.blockSize * dpr);
     return;
   }
-  canvas.width = Math.round(entry.contentRect.width * dpr);
-  canvas.height = Math.round(entry.contentRect.height * dpr);
+  canvas2.width = Math.round(entry.contentRect.width * dpr);
+  canvas2.height = Math.round(entry.contentRect.height * dpr);
 }
 class Engine {
-  constructor(canvas) {
+  constructor(canvas2) {
     __publicField(this, "canvas");
     __publicField(this, "ctx");
-    __publicField(this, "plugins", /* @__PURE__ */ new Map());
-    __publicField(this, "plugin_stack", []);
-    __publicField(this, "scale", 1);
+    __publicField(this, "plugins", []);
+    __publicField(this, "rem", 16);
     __publicField(this, "screen_log", []);
     __publicField(this, "_is_redraw_queued", false);
     __publicField(this, "_canvas_w", -1);
     __publicField(this, "_canvas_h", -1);
-    this.canvas = canvas;
-    let canvas_ctx = canvas.getContext("2d");
-    canvas_ctx.scale_factor = 1;
+    this.canvas = canvas2;
+    let canvas_ctx = canvas2.getContext("2d");
+    canvas_ctx.scale_factor = this.rem;
     canvas_ctx.w = 1;
     canvas_ctx.h = 1;
     this.ctx = canvas_ctx;
-    canvas.addEventListener("pointerdown", (ev) => {
-      ev.preventDefault();
-    });
-    window.addEventListener("pointerdown", (ev) => {
+    canvas2.addEventListener("pointerdown", (ev) => {
       ev.preventDefault();
       this.pointer_down(ev);
     });
@@ -359,7 +355,7 @@ class Engine {
       ev.preventDefault();
       this.pointer_up(ev);
     });
-    canvas.addEventListener("touchstart", (ev) => {
+    canvas2.addEventListener("touchstart", (ev) => {
       ev.preventDefault();
     });
   }
@@ -373,21 +369,18 @@ class Engine {
       warn: (data) => console.warn(`[${id}] `, data),
       error: (data) => console.error(`[${id}] `, data)
     };
-    this.plugins.set(id, plugin);
+    this.plugins.push(plugin);
     return plugin;
   }
-  *plugin_stack_iter() {
-    for (const plugin_id of this.plugin_stack) {
-      const plugin = this.plugins.get(plugin_id);
-      if (!plugin)
-        continue;
+  *plugin_iter() {
+    for (const plugin of this.plugins) {
       yield plugin;
     }
   }
   transform_event(event) {
     return [
-      event.x / this.scale,
-      event.y / this.scale
+      event.x / this.rem,
+      event.y / this.rem
     ];
   }
   queue_redraw() {
@@ -401,19 +394,19 @@ class Engine {
     this._is_redraw_queued = false;
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    ctx.scale_factor = this.scale * window.devicePixelRatio;
+    ctx.scale_factor = this.rem * window.devicePixelRatio;
     ctx.w = this.canvas.width / ctx.scale_factor;
     ctx.h = this.canvas.height / ctx.scale_factor;
     if (ctx.w != this._canvas_w || ctx.h != this._canvas_h) {
       this._canvas_w = ctx.w;
       this._canvas_h = ctx.h;
-      for (const plugin of this.plugin_stack_iter()) {
+      for (const plugin of this.plugin_iter()) {
         (_a = plugin.resize) == null ? void 0 : _a.call(plugin, ctx);
       }
     }
     ctx.save();
     ctx.scale(ctx.scale_factor, ctx.scale_factor);
-    for (const plugin of this.plugin_stack_iter()) {
+    for (const plugin of this.plugin_iter()) {
       ctx.save();
       (_b = plugin.draw) == null ? void 0 : _b.call(plugin, ctx);
       ctx.restore();
@@ -423,7 +416,7 @@ class Engine {
   pointer_down(event) {
     var _a;
     const [px, py] = this.transform_event(event);
-    for (const plugin of this.plugin_stack_iter()) {
+    for (const plugin of this.plugin_iter()) {
       if (!plugin.pointer_down)
         continue;
       const is_handled = (_a = plugin.pointer_down) == null ? void 0 : _a.call(plugin, event.pointerId, px, py);
@@ -434,14 +427,14 @@ class Engine {
   pointer_move(event) {
     var _a;
     const [px, py] = this.transform_event(event);
-    for (const plugin of this.plugin_stack_iter()) {
+    for (const plugin of this.plugin_iter()) {
       (_a = plugin.pointer_move) == null ? void 0 : _a.call(plugin, event.pointerId, px, py);
     }
   }
   pointer_up(event) {
     var _a;
     const [px, py] = this.transform_event(event);
-    for (const plugin of this.plugin_stack_iter()) {
+    for (const plugin of this.plugin_iter()) {
       (_a = plugin.pointer_up) == null ? void 0 : _a.call(plugin, event.pointerId, px, py);
     }
   }
@@ -518,28 +511,29 @@ function clamp_length(x, y, max_length) {
   return [x * factor, y * factor];
 }
 const PING_BTW_MS = 250;
-const SESSION_STORAGE_KEY = "gremote:session_id";
-class Debug {
-  constructor(plugin) {
-    __publicField(this, "plugin");
-    __publicField(this, "draw", (ctx) => {
-      let texts = this.plugin.engine.screen_log.slice();
-      if (this.plugin.engine.driver.connection_state != "connected") {
-        texts.push(this.plugin.engine.driver.name);
-        texts.push(this.plugin.engine.driver.connection_state);
-      }
-      if (texts.length == 0)
-        return;
-      ctx.textBaseline = "top";
-      ctx.textAlign = "center";
-      ctx.font = "bold 1px monospace";
-      ctx.fillStyle = "white";
-      ctx.fillText(texts.join(" "), ctx.w / 2, 2.5, ctx.w * 0.75);
-    });
-    this.plugin = plugin;
-    plugin.draw = this.draw;
-    plugin.engine.driver.on_status_changed = () => plugin.engine.queue_redraw();
+const CONNECTION_DROPPED_MS = 3e3;
+const STORAGE_KEY_PREFIX = "gremote:";
+const SESSION_STORAGE_KEY = STORAGE_KEY_PREFIX + "session_id";
+const NAME_STORAGE_KEY = STORAGE_KEY_PREFIX + "name";
+function filter_name(name2) {
+  const MAX_LENGTH = 10;
+  const ALLOWED_CHARS = " ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  name2 = name2.toUpperCase();
+  name2.trim();
+  let result = [];
+  let was_space = true;
+  for (const chr of name2) {
+    if (result.length >= MAX_LENGTH)
+      break;
+    const is_space = chr === " ";
+    if (is_space && was_space)
+      continue;
+    if (ALLOWED_CHARS.indexOf(chr) < 0)
+      continue;
+    result.push(chr);
+    was_space = is_space;
   }
+  return result.join("");
 }
 class Driver {
   constructor() {
@@ -576,10 +570,13 @@ class RemoteProtocol {
   pong(timestamp) {
     return null;
   }
-  name(name) {
+  session(sid) {
     return null;
   }
-  session(sid) {
+  name(name2) {
+    return null;
+  }
+  leave() {
     return null;
   }
   layout_ready(id) {
@@ -596,6 +593,36 @@ class RemoteProtocol {
   }
   input_joy_up(id, x, y) {
     return null;
+  }
+}
+function get_session_id(generate_new = false) {
+  let session_id = Number(sessionStorage.getItem(SESSION_STORAGE_KEY));
+  if (!session_id || generate_new) {
+    session_id = new_id();
+    sessionStorage.setItem(SESSION_STORAGE_KEY, session_id.toString());
+  }
+  return session_id;
+}
+function new_id() {
+  return Math.floor(Math.random() * 899999) + 1e5;
+}
+class Widget {
+  constructor(remote, id) {
+    __publicField(this, "remote");
+    __publicField(this, "id");
+    __publicField(this, "tick", () => {
+    });
+    __publicField(this, "sync", () => {
+    });
+    __publicField(this, "down", (pid, px, py) => false);
+    __publicField(this, "move", (pid, px, py) => {
+    });
+    __publicField(this, "up", (pid, px, py) => {
+    });
+    __publicField(this, "draw", (ctx) => {
+    });
+    this.remote = remote;
+    this.id = id;
   }
 }
 class WSDriver extends Driver {
@@ -729,6 +756,7 @@ class RTCDriver extends Driver {
     __publicField(this, "peer");
     __publicField(this, "reliable_channel");
     __publicField(this, "unreliable_channel");
+    __publicField(this, "pending_candidates", []);
     __publicField(this, "get_status", () => {
       let statuses = [];
       if (this.peer) {
@@ -754,7 +782,7 @@ class RTCDriver extends Driver {
           // { "urls": ["stun:stun4.l.google.com:19302"] },
         ]
       });
-      this.reliable_channel = this.peer.createDataChannel("reliable", { negotiated: true, id: 1 });
+      this.reliable_channel = this.peer.createDataChannel("reliable", { negotiated: true, id: 1, ordered: true });
       this.reliable_channel.onopen = () => {
         var _a;
         console.log("[RTC] reliable channel opened");
@@ -810,19 +838,19 @@ class RTCDriver extends Driver {
         (_a = this.on_status_changed) == null ? void 0 : _a.call(this);
       };
       this.peer.onconnectionstatechange = (ev) => {
-        var _a, _b, _c, _d;
+        var _a, _b, _c;
         console.log("[RTC] connect:", this.peer.connectionState);
         (_a = this.on_status_changed) == null ? void 0 : _a.call(this);
-        this.set_connection(((_b = this.peer) == null ? void 0 : _b.connectionState) || "unknown");
-        switch ((_c = this.peer) == null ? void 0 : _c.connectionState) {
+        switch ((_b = this.peer) == null ? void 0 : _b.connectionState) {
           case "connected":
             setTimeout(() => {
-              var _a2;
-              return (_a2 = this.on_opened) == null ? void 0 : _a2.call(this);
+              var _a2, _b2;
+              this.set_connection(((_a2 = this.peer) == null ? void 0 : _a2.connectionState) || "unknown");
+              (_b2 = this.on_opened) == null ? void 0 : _b2.call(this);
             }, 2e3);
             break;
           case "closed":
-            (_d = this.on_closed) == null ? void 0 : _d.call(this);
+            (_c = this.on_closed) == null ? void 0 : _c.call(this);
             break;
         }
       };
@@ -846,20 +874,30 @@ class RTCDriver extends Driver {
         console.log(`[RTC] received ${type}:`, sdp);
         const desc = new RTCSessionDescription({ type, sdp });
         this.peer.setRemoteDescription(desc);
+        for (const candidate_obj of this.pending_candidates) {
+          console.log("[RTC] adding queued candidate");
+          this.peer.addIceCandidate(candidate_obj);
+        }
       };
       this._signal_protocol.on_candidate = async (candidate, sdp_mid, sdp_index, ufrag) => {
-        console.log("[RTC] received candidate:", { candidate, sdp_mid, sdp_index });
-        await new Promise((resolve) => setTimeout(resolve, 2e3));
-        this.peer.addIceCandidate({
+        var _a;
+        console.log("[RTC] received candidate:", { candidate, sdp_mid, sdp_index, ufrag });
+        const candidate_obj = {
           candidate,
           sdpMid: sdp_mid,
           sdpMLineIndex: sdp_index,
           usernameFragment: ufrag
-        });
+        };
+        if ((_a = this.peer) == null ? void 0 : _a.remoteDescription) {
+          console.log("[RTC] adding candidate immediately");
+          this.peer.addIceCandidate(candidate_obj);
+        } else {
+          console.log("[RTC] adding candidate to queue");
+          this.pending_candidates.push(candidate_obj);
+        }
       };
-      console.log("[RTC] creating offer");
       const offer = await this.peer.createOffer();
-      console.log(offer);
+      console.log("[RTC] created offer:", offer);
       console.log("[RTC] setting local description to offer");
       await this.peer.setLocalDescription(offer);
       console.log("[RTC] sending offer");
@@ -868,6 +906,7 @@ class RTCDriver extends Driver {
     __publicField(this, "disconnect", async () => {
       var _a, _b, _c;
       console.log("[RTC] disconnecting");
+      this._signal_driver.disconnect();
       (_a = this.reliable_channel) == null ? void 0 : _a.close();
       (_b = this.unreliable_channel) == null ? void 0 : _b.close();
       (_c = this.peer) == null ? void 0 : _c.close();
@@ -1010,16 +1049,21 @@ class JSONProtocol extends RemoteProtocol {
       t: timestamp
     });
   }
-  name(name) {
-    return JSON.stringify({
-      _: "name",
-      name
-    });
-  }
   session(sid) {
     return JSON.stringify({
       _: "session",
       sid
+    });
+  }
+  name(name2) {
+    return JSON.stringify({
+      _: "name",
+      name: name2
+    });
+  }
+  leave() {
+    return JSON.stringify({
+      _: "leave"
     });
   }
   layout_ready(id) {
@@ -1067,16 +1111,19 @@ class JSONProtocol extends RemoteProtocol {
   }
 }
 class Remote extends Engine {
-  constructor(canvas) {
-    super(canvas);
+  constructor(canvas2) {
+    super(canvas2);
     __publicField(this, "driver_type", "$_DRIVER_$");
     __publicField(this, "protocol_type", "$_PROTOCOL_$");
     __publicField(this, "protocol");
     __publicField(this, "driver");
+    __publicField(this, "send_queue", []);
+    __publicField(this, "name", "(unnamed)");
     __publicField(this, "session_id");
     __publicField(this, "tick_rate", 30);
+    __publicField(this, "is_connection_dropped", false);
     if (this.driver_type.startsWith("$")) {
-      this.driver_type = "WS";
+      this.driver_type = "RTC";
       console.warn(`[Remote] no driver is defined - assuming '${this.driver_type}' which may not be correct`);
     } else {
       console.log("[Remote] driver:", this.driver_type);
@@ -1108,77 +1155,74 @@ class Remote extends Engine {
         break;
     }
     this.driver.on_message_received = (message) => this.protocol.parse_message(message);
-    this.driver.on_opened = () => {
-      console.log("[Remote] sending session id");
-      this.driver.send_reliable(this.protocol.session(this.session_id));
-    };
     this.session_id = get_session_id();
     console.log("[Remote] session id:", this.session_id);
+    this.send(this.protocol.session(this.session_id));
     this.tick();
+    this.driver.on_connection_changed = (state) => {
+      var _a, _b;
+      if (state === "connected") {
+        for (const plugin of this.plugin_iter()) {
+          (_a = plugin.connected) == null ? void 0 : _a.call(plugin);
+        }
+        for (const message of this.send_queue) {
+          this.driver.send_reliable(message);
+        }
+      } else {
+        for (const plugin of this.plugin_iter()) {
+          (_b = plugin.disconnected) == null ? void 0 : _b.call(plugin);
+        }
+      }
+    };
   }
   async connect() {
-    var _a;
+    window.scroll({ left: 0, top: 0 });
     await this.driver.connect();
-    for (const plugin of this.plugin_stack_iter()) {
-      (_a = plugin.connected) == null ? void 0 : _a.call(plugin);
-    }
+    window.scroll({ left: 0, top: 0 });
   }
   async disconnect() {
-    var _a;
     await this.driver.disconnect();
-    for (const plugin of this.plugin_stack_iter()) {
-      (_a = plugin.disconnected) == null ? void 0 : _a.call(plugin);
-    }
   }
   create_plugin(id) {
     const plugin = {
-      engine: this,
       id,
+      engine: this,
+      remote: this,
       trace: (data) => console.trace(`[${id}] `, data),
       debug: (data) => console.debug(`[${id}] `, data),
       log: (data) => console.log(`[${id}] `, data),
       warn: (data) => console.warn(`[${id}] `, data),
       error: (data) => console.error(`[${id}] `, data)
     };
-    this.plugins.set(id, plugin);
+    this.plugins.push(plugin);
     return plugin;
   }
   tick() {
     var _a;
-    setTimeout(() => this.tick(), 1e3 / this.tick_rate);
-    for (const plugin of this.plugin_stack_iter()) {
+    for (const plugin of this.plugin_iter()) {
       (_a = plugin.tick) == null ? void 0 : _a.call(plugin);
     }
+    setTimeout(() => this.tick(), 1e3 / this.tick_rate);
   }
-}
-function get_session_id(generate_new = false) {
-  let session_id = Number(sessionStorage.getItem(SESSION_STORAGE_KEY));
-  if (!session_id || generate_new) {
-    session_id = new_id();
-    sessionStorage.setItem(SESSION_STORAGE_KEY, session_id.toString());
+  set_connection_dropped(is_connection_dropped) {
+    var _a, _b;
+    if (this.is_connection_dropped == is_connection_dropped)
+      return;
+    this.is_connection_dropped = is_connection_dropped;
+    for (const plugin of this.plugin_iter()) {
+      const remote_plugin = plugin;
+      if (is_connection_dropped)
+        (_a = remote_plugin == null ? void 0 : remote_plugin.connection_dropped) == null ? void 0 : _a.call(remote_plugin);
+      else
+        (_b = remote_plugin == null ? void 0 : remote_plugin.connection_regained) == null ? void 0 : _b.call(remote_plugin);
+    }
   }
-  return session_id;
-}
-function new_id() {
-  return Math.floor(Math.random() * 899999) + 1e5;
-}
-class Widget {
-  constructor(remote, id) {
-    __publicField(this, "remote");
-    __publicField(this, "id");
-    __publicField(this, "tick", () => {
-    });
-    __publicField(this, "sync", () => {
-    });
-    __publicField(this, "down", (pid, px, py) => false);
-    __publicField(this, "move", (pid, px, py) => {
-    });
-    __publicField(this, "up", (pid, px, py) => {
-    });
-    __publicField(this, "draw", (ctx) => {
-    });
-    this.remote = remote;
-    this.id = id;
+  send(message) {
+    if (this.driver.connection_state === "connected") {
+      this.driver.send_reliable(message);
+      return;
+    }
+    this.send_queue.push(message);
   }
 }
 class Button extends Widget {
@@ -1348,8 +1392,9 @@ class Joystick extends Widget {
   }
 }
 class MenuButton extends Widget {
-  constructor(remote, options) {
+  constructor(remote, callback, options) {
     super(remote, "");
+    __publicField(this, "callback");
     __publicField(this, "cx");
     __publicField(this, "cy");
     __publicField(this, "r");
@@ -1366,18 +1411,20 @@ class MenuButton extends Widget {
         return false;
       this._is_active = true;
       this._pid = pid;
-      this.sync();
       this.remote.queue_redraw();
       return true;
     });
     __publicField(this, "up", (pid, px, py) => {
+      var _a;
       if (!this._is_active)
         return;
       if (this._pid != pid)
         return;
       this._is_active = false;
-      this.sync();
       this.remote.queue_redraw();
+      if (this.is_inside(px, py)) {
+        (_a = this.callback) == null ? void 0 : _a.call(this);
+      }
     });
     __publicField(this, "draw", (ctx) => {
       ctx.translate(this.cx, this.cy);
@@ -1418,140 +1465,244 @@ class MenuButton extends Widget {
           break;
       }
     });
-    this.cx = options.cx;
-    this.cy = options.cy;
+    this.callback = callback;
+    this.cx = options == null ? void 0 : options.cx;
+    this.cy = options == null ? void 0 : options.cy;
     this.r = 2;
     this.icon = options.icon || "none";
   }
 }
-class Controls {
-  constructor(plugin) {
-    __publicField(this, "plugin");
-    __publicField(this, "widgets", []);
-    this.plugin = plugin;
-    this.plugin.resize = (ctx) => this.resize(ctx);
-    this.plugin.draw = (ctx) => this.draw(ctx);
-    this.plugin.pointer_down = (pid, px, py) => this.pointer_down(pid, px, py);
-    this.plugin.pointer_move = (pid, px, py) => this.pointer_move(pid, px, py);
-    this.plugin.pointer_up = (pid, px, py) => this.pointer_up(pid, px, py);
-    this.plugin.tick = () => this.tick();
-  }
-  resize(ctx) {
-    this.widgets = [
-      new MenuButton(this.plugin.engine, { icon: "menu", cx: 2, cy: 2 }),
-      new MenuButton(this.plugin.engine, { icon: "pause", cx: ctx.w - 2, cy: 2 }),
-      new Joystick(this.plugin.engine, "l", { label: "L", cx: 8, cy: ctx.h - 8, r: 4, pad: 1 }),
-      new Button(this.plugin.engine, "a", { label: "A", cx: ctx.w - 4, cy: ctx.h - 9 }),
-      new Button(this.plugin.engine, "b", { label: "B", cx: ctx.w - 9, cy: ctx.h - 4 }),
-      new Button(this.plugin.engine, "x", { label: "X", cx: ctx.w - 9, cy: ctx.h - 14 }),
-      new Button(this.plugin.engine, "y", { label: "Y", cx: ctx.w - 14, cy: ctx.h - 9 })
+const controls = (plugin) => {
+  let widgets = [];
+  plugin.resize = (ctx) => {
+    widgets = [
+      new MenuButton(plugin.remote, () => {
+        window.remote_open_menu();
+      }, { icon: "menu", cx: 2, cy: 2 }),
+      new MenuButton(plugin.remote, () => {
+      }, { icon: "pause", cx: ctx.w - 2, cy: 2 }),
+      new Joystick(plugin.remote, "l", { label: "L", cx: 8, cy: ctx.h - 8 }),
+      new Button(plugin.remote, "a", { label: "A", cx: ctx.w - 4, cy: ctx.h - 9 }),
+      new Button(plugin.remote, "b", { label: "B", cx: ctx.w - 9, cy: ctx.h - 4 }),
+      new Button(plugin.remote, "x", { label: "X", cx: ctx.w - 9, cy: ctx.h - 14 }),
+      new Button(plugin.remote, "y", { label: "Y", cx: ctx.w - 14, cy: ctx.h - 9 })
     ];
-    for (const widget of this.widgets) {
+    for (const widget of widgets) {
       widget.sync();
     }
-  }
-  tick() {
-    for (const widget of this.widgets) {
+  };
+  plugin.tick = () => {
+    for (const widget of widgets) {
       widget.tick();
     }
-  }
-  draw(ctx) {
-    ctx.fillStyle = "white";
-    ctx.strokeStyle = "white";
-    for (const widget of this.widgets) {
+  };
+  plugin.draw = (ctx) => {
+    const is_connected = plugin.remote.driver.connection_state == "connected";
+    ctx.fillStyle = is_connected ? "white" : "rgb(64 64 64)";
+    ctx.strokeStyle = is_connected ? "white" : "rgb(64 64 64)";
+    for (const widget of widgets) {
       ctx.save();
       widget.draw(ctx);
       ctx.restore();
     }
-  }
-  pointer_down(pid, px, py) {
-    for (const widget of this.widgets) {
+  };
+  plugin.pointer_down = (pid, px, py) => {
+    for (const widget of widgets) {
       const is_handled = widget.down(pid, px, py);
       if (is_handled)
         return true;
     }
     return false;
-  }
-  pointer_move(pid, px, py) {
-    for (const widget of this.widgets) {
+  };
+  plugin.pointer_move = (pid, px, py) => {
+    for (const widget of widgets) {
       widget.move(pid, px, py);
     }
-  }
-  pointer_up(pid, px, py) {
-    for (const widget of this.widgets) {
+    return false;
+  };
+  plugin.pointer_up = (pid, px, py) => {
+    for (const widget of widgets) {
       widget.up(pid, px, py);
     }
-  }
-}
-class Ping {
-  constructor(plugin) {
-    __publicField(this, "plugin");
-    __publicField(this, "sent_pings", 0);
-    __publicField(this, "received_pings", 0);
-    __publicField(this, "ongoing_pings", 0);
-    __publicField(this, "monitor", new Monitor());
-    __publicField(this, "show_text", true);
-    __publicField(this, "show_graph", true);
-    this.plugin = plugin;
-    this.plugin.engine.protocol.on_pong = (sts) => {
-      this.received_pings++;
-      this.ongoing_pings--;
-      const ping_ms = Date.now() - sts;
-      this.monitor.log(ping_ms);
-      plugin.draw = (ctx) => this.draw(ctx);
-      if (this.show_text || this.show_graph) {
-        plugin.engine.queue_redraw();
-      }
-    };
-    setInterval(() => {
-      if (plugin.engine.driver.connection_state != "connected")
-        return;
-      this.send_ping();
-    }, PING_BTW_MS);
-  }
-  send_ping() {
-    const sts = Date.now();
-    const payload = this.plugin.engine.protocol.ping(sts);
-    this.plugin.engine.driver.send_unreliable(payload);
-    this.sent_pings++;
-    this.ongoing_pings++;
-  }
-  draw(ctx) {
-    if (this.plugin.engine.driver.connection_state != "connected")
+    return false;
+  };
+};
+const debug = (plugin) => {
+  plugin.remote.driver.on_status_changed = () => plugin.engine.queue_redraw();
+  plugin.draw = (ctx) => {
+    let texts = plugin.engine.screen_log.slice();
+    if (texts.length == 0)
       return;
-    if (this.show_graph) {
+    ctx.textBaseline = "top";
+    ctx.textAlign = "center";
+    ctx.font = "bold 1px monospace";
+    ctx.fillStyle = "white";
+    ctx.fillText(texts.join(" "), ctx.w / 2, 2.5, ctx.w * 0.75);
+  };
+};
+const leave = (plugin) => {
+  const leave_dialog = document.getElementById("leave-dialog");
+  const leave2 = () => {
+    plugin.remote.send(plugin.remote.protocol.leave());
+    setTimeout(() => {
+      plugin.remote.disconnect();
+      window.close();
+    }, 1e3);
+  };
+  window.remote_leave = leave2;
+  const show_leave_dialog = () => {
+    window.remote_close_menu();
+    leave_dialog.inert = true;
+    leave_dialog.showModal();
+    leave_dialog.inert = false;
+  };
+  window.remote_open_leave_dialog = show_leave_dialog;
+};
+const menu = (plugin) => {
+  let is_menu_open = false;
+  const update_menu = () => {
+    document.body.classList.toggle("menu-open", is_menu_open);
+  };
+  const open_menu = () => {
+    is_menu_open = true;
+    update_menu();
+  };
+  window.remote_open_menu = open_menu;
+  const close_menu = () => {
+    is_menu_open = false;
+    update_menu();
+  };
+  window.remote_close_menu = close_menu;
+  plugin.pointer_down = (pid, px, py) => {
+    window.scroll({ left: 0, top: 0 });
+    if (!is_menu_open)
+      return false;
+    close_menu();
+    return true;
+  };
+  close_menu();
+};
+const name = (plugin) => {
+  const name_dialog = document.getElementById("name-dialog");
+  const name_input = document.getElementById("name-input");
+  const name_span = document.getElementById("name");
+  const show_name_dialog = () => {
+    window.remote_close_menu();
+    name_input.value = "";
+    name_dialog.inert = true;
+    name_dialog.showModal();
+    name_dialog.inert = false;
+  };
+  window.remote_open_name_dialog = show_name_dialog;
+  let current_name = "(no name)";
+  const set_name = (new_name) => {
+    new_name = filter_name(new_name);
+    if (new_name.length > 0) {
+      current_name = new_name;
+    }
+    name_span.textContent = new_name;
+    sessionStorage.setItem(NAME_STORAGE_KEY, current_name);
+    plugin.remote.send(plugin.remote.protocol.name(current_name));
+  };
+  name_dialog.addEventListener("close", (ev) => {
+    set_name(name_input.value);
+    window.scroll({ left: 0, top: 0 });
+  });
+  const stored_name = sessionStorage.getItem(NAME_STORAGE_KEY);
+  if (stored_name)
+    set_name(stored_name);
+  else
+    show_name_dialog();
+};
+const ping = (plugin) => {
+  let is_connected = false;
+  let sent_pings = 0;
+  let received_pings = 0;
+  let last_ping_receive_time = Date.now();
+  let monitor = new Monitor();
+  const send_ping = () => {
+    const sts = Date.now();
+    const payload = plugin.remote.protocol.ping(sts);
+    plugin.remote.driver.send_unreliable(payload);
+    sent_pings++;
+  };
+  plugin.connected = () => {
+    last_ping_receive_time = Date.now();
+    is_connected = true;
+  };
+  plugin.draw = (ctx) => {
+    if (plugin.remote.driver.connection_state != "connected")
+      return;
+    if (plugin.remote.is_connection_dropped)
+      return;
+    {
       ctx.save();
       ctx.resetTransform();
-      ctx.translate(ctx.canvas.width / 2 - this.monitor.size, 0);
+      ctx.translate(ctx.canvas.width / 2 - monitor.size, 0);
       ctx.fillStyle = "rgb(64 64 64)";
-      this.monitor.draw(ctx, 0, 2, 1);
+      monitor.draw(ctx, 0, 2, 1);
       ctx.restore();
     }
-    if (this.show_text) {
+    {
       ctx.textBaseline = "top";
       ctx.textAlign = "center";
       ctx.font = "bold 1px monospace";
       ctx.fillStyle = "rgb(128 128 128)";
-      ctx.fillText(`${this.monitor.current}ms ${Math.floor(this.received_pings / this.sent_pings * 100)}%`, ctx.w / 2, 1);
+      ctx.fillText(`${monitor.current}ms ${Math.floor(received_pings / sent_pings * 100)}%`, ctx.w / 2, 1);
     }
-  }
-}
-async function main() {
-  const canvas = document.getElementById("canvas");
-  if (!canvas)
-    throw new Error("#canvas element was not found in the page.");
-  const engine = new Remote(canvas);
-  engine.scale = 16;
-  engine.plugin_stack = [
-    "Controls",
-    "Ping",
-    "Debug"
-  ];
-  new Debug(engine.create_plugin("Debug"));
-  new Ping(engine.create_plugin("Ping"));
-  new Controls(engine.create_plugin("Controls"));
-  fill_canvas(canvas, () => engine.queue_redraw());
-  engine.queue_redraw();
-  engine.connect();
-}
-main();
+  };
+  plugin.remote.protocol.on_pong = (sts) => {
+    received_pings++;
+    last_ping_receive_time = Date.now();
+    const ping_ms = Date.now() - sts;
+    monitor.log(ping_ms);
+    plugin.remote.set_connection_dropped(false);
+    {
+      plugin.remote.queue_redraw();
+    }
+  };
+  setInterval(() => {
+    if (!is_connected)
+      return;
+    send_ping();
+    const delta = Date.now() - last_ping_receive_time;
+    if (delta > CONNECTION_DROPPED_MS) {
+      plugin.remote.set_connection_dropped(true);
+      plugin.remote.queue_redraw();
+    }
+  }, PING_BTW_MS);
+};
+const toasts = (plugin) => {
+  const spinner_element = document.getElementById("spinner");
+  const reload_element = document.getElementById("reload");
+  plugin.connected = () => {
+    spinner_element.style.visibility = "hidden";
+    reload_element.style.visibility = "hidden";
+  };
+  plugin.disconnected = () => {
+    spinner_element.style.visibility = "hidden";
+    reload_element.style.visibility = "visible";
+  };
+  plugin.connection_regained = () => {
+    spinner_element.style.visibility = "hidden";
+    reload_element.style.visibility = "hidden";
+  };
+  plugin.connection_dropped = () => {
+    spinner_element.style.visibility = "hidden";
+    reload_element.style.visibility = "visible";
+  };
+  spinner_element.style.visibility = "visible";
+  reload_element.style.visibility = "hidden";
+};
+const canvas = document.getElementById("canvas");
+const engine = new Remote(canvas);
+debug(engine.create_plugin("debug"));
+leave(engine.create_plugin("leave"));
+name(engine.create_plugin("name"));
+menu(engine.create_plugin("menu"));
+toasts(engine.create_plugin("toasts"));
+ping(engine.create_plugin("ping"));
+controls(engine.create_plugin("controls"));
+fill_canvas(canvas, () => engine.queue_redraw());
+engine.queue_redraw();
+engine.connect();

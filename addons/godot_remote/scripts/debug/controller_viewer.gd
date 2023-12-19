@@ -4,8 +4,9 @@ class_name ControllerViewer extends CanvasItem
 const Controller = preload('res://addons/godot_remote/scripts/types/controller.gd')
 
 
-@export var remote: GodotRemote
 @export var session_id: int
+
+@export var name_label: Label
 
 @export var a_btn: Control
 @export var b_btn: Control
@@ -17,12 +18,14 @@ const Controller = preload('res://addons/godot_remote/scripts/types/controller.g
 
 
 func _process(delta: float) -> void:
-	var controller: Controller = remote.get_controller(session_id)
+	var controller: Controller = Remote.get_controller(session_id)
 	if not controller:
 		modulate.a = .25
 		return
 	
 	modulate.a = 1. if controller.is_peer_connected else .5
+	
+	name_label.text = controller.username
 	
 	# TODO: LAYOUT SYSTEM
 	var a = controller.is_btn_down(&'a')

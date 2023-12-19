@@ -23,3 +23,22 @@ export class Widget {
 
 	draw = (ctx: Context): void => { }
 }
+
+
+
+/*
+	export interface Widget {
+		remote: Remote
+
+
+		init?: () => void
+
+		tick?: () => void
+		sync?: () => void
+		draw?: (ctx: Context) => void
+
+		pointer_down?: (pid: number, px: number, py: number) => boolean
+		pointer_move?: (pid: number, px: number, py: number) => void
+		pointer_up?: (pid: number, px: number, py: number) => void
+	}
+*/

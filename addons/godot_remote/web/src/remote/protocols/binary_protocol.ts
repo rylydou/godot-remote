@@ -1,5 +1,5 @@
 import { RemoteProtocol, ref } from '..'
-import { BinView, bin, math } from '../../core'
+import { BinView, bin } from '../../core'
 
 
 export class BinaryProtocol extends RemoteProtocol {

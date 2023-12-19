@@ -13,6 +13,7 @@ corner_radius_top_left = 1000
 corner_radius_top_right = 1000
 corner_radius_bottom_right = 1000
 corner_radius_bottom_left = 1000
+corner_detail = 20
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vkm1h"]
 bg_color = Color(1, 1, 1, 1)
@@ -20,27 +21,105 @@ corner_radius_top_left = 1000
 corner_radius_top_right = 1000
 corner_radius_bottom_right = 1000
 corner_radius_bottom_left = 1000
+corner_detail = 20
 
-[node name="ControllerView" type="HBoxContainer" node_paths=PackedStringArray("a_btn", "b_btn", "x_btn", "y_btn", "left_stick", "left_stick_container")]
+[node name="ControllerView" type="HBoxContainer" node_paths=PackedStringArray("name_label", "a_btn", "b_btn", "x_btn", "y_btn", "left_stick", "left_stick_container")]
 size_flags_horizontal = 0
 size_flags_vertical = 8
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
 script = ExtResource("1_cd7ln")
-a_btn = NodePath("VBoxContainer/A")
-b_btn = NodePath("VBoxContainer/B")
-x_btn = NodePath("VBoxContainer/X")
-y_btn = NodePath("VBoxContainer/Y")
-left_stick = NodePath("LeftStick/LeftHandle")
-left_stick_container = NodePath("LeftStick")
+name_label = NodePath("VBox/Name")
+a_btn = NodePath("VBox/Control/A")
+b_btn = NodePath("VBox/Control/B")
+x_btn = NodePath("VBox/Control/X")
+y_btn = NodePath("VBox/Control/Y")
+left_stick = NodePath("VBox/Control/Aspect/Left Stick/Left Handle")
+left_stick_container = NodePath("VBox/Control/Aspect/Left Stick")
 
-[node name="LeftStick" type="Panel" parent="."]
-custom_minimum_size = Vector2(150, 150)
+[node name="VBox" type="VBoxContainer" parent="."]
+custom_minimum_size = Vector2(100, 150)
 layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 8
+
+[node name="Name" type="Label" parent="VBox"]
+layout_mode = 2
+text = "(no name)"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 1
+
+[node name="Control" type="Control" parent="VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="A" type="Label" parent="VBox/Control"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -16.0
+offset_top = -34.0
+grow_horizontal = 0
+grow_vertical = 0
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "A"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="B" type="Label" parent="VBox/Control"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -34.0
+offset_right = 16.0
+grow_vertical = 0
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "B"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="X" type="Label" parent="VBox/Control"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -16.0
+offset_bottom = 34.0
+grow_horizontal = 0
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "X"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Y" type="Label" parent="VBox/Control"]
+layout_mode = 1
+offset_right = 16.0
+offset_bottom = 34.0
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "Y"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Aspect" type="AspectRatioContainer" parent="VBox/Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Left Stick" type="Panel" parent="VBox/Control/Aspect"]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_2uujr")
 
-[node name="LeftHandle" type="Panel" parent="LeftStick"]
+[node name="Left Handle" type="Panel" parent="VBox/Control/Aspect/Left Stick"]
 custom_minimum_size = Vector2(48, 48)
 layout_mode = 1
 anchors_preset = 8
@@ -56,7 +135,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_vkm1h")
 
-[node name="L" type="Label" parent="LeftStick/LeftHandle"]
+[node name="L" type="Label" parent="VBox/Control/Aspect/Left Stick/Left Handle"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -66,43 +145,5 @@ grow_vertical = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 24
 text = "L"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
-layout_mode = 2
-size_flags_horizontal = 8
-theme_override_constants/separation = 0
-alignment = 1
-
-[node name="A" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_font_sizes/font_size = 24
-text = "A"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="B" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_font_sizes/font_size = 24
-text = "B"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="X" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_font_sizes/font_size = 24
-text = "X"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Y" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_font_sizes/font_size = 24
-text = "Y"
 horizontal_alignment = 1
 vertical_alignment = 1

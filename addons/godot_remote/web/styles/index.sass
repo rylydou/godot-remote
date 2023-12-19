@@ -5,16 +5,19 @@
 html,
 body
 	user-select: none
+	-webkit-user-select: none
+	
 	max-width: 100dvw
 	max-height: 100dvh
 	overflow: hidden
 	overscroll-behavior: none
+	
 	font-size: 1rem
 	line-height: 1.5rem
+	font-family: $font-display
 	
 	background-color: black
 	color: white
-	font-family: $font-display
 
 
 canvas
@@ -25,64 +28,47 @@ canvas
 	background-color: black
 	
 	transition: filter 100ms
-
-canvas.open
-	filter: opacity(.25) blur(8px)
 	
-	transition: filter 200ms
+	body.menu-open &
+		filter: opacity(.25) blur(8px)
+		
+		transition: filter 200ms
 
 
-#menu
-	position: fixed
+@import menu
+@import dialog
+@import toasts
+
+
+.orientation-message
+	z-index: 9001
+	position: absolute
 	inset: 0
-	right: 50%
-	display: flex
-	flex-direction: column
-	min-width: min(100vh, 100vw)
-	max-width: 100vw
-	overflow-y: scroll
-	overflow-x: none
 	
-	background-color: white
-	color: black
+	display: grid
+	place-items: center
+	text-align: center
+	padding: 3rem
 	
-	visibility: hidden
-	translate: -100% 0%
-	transition: translate 100ms linear, visibility 0ms 100ms
-	
-	&.open
-		visibility: visible
-		translate: 0% 0%
-		transition: translate 200ms ease-out
-	
-	>*
-		display: flex
-		justify-content: space-between
-		align-items: left
-		gap: 1rem
-		min-height: 2rem
-		padding: 1rem 2rem
-	
-	>:not(:last-child)
-		border-bottom: solid 1px lightgray
+	background: black
+	color: white
 	
 	h1
-		font-size: 1.5rem
-		line-height: 2rem
-		
-		font-family: $font-display
-		font-weight: 900
-	
-	#menu-close
-		width: 2rem
-		height: 2rem
-	
-	>button
-		cursor: pointer
-		font-family: $font-display
 		font-weight: bold
-		
-		>:last-child
-			opacity: 0.5
-			font-family: $font-body
-			font-weight: normal
+		font-size: 2rem
+		line-height: 3rem
+		rotate: -5deg
+
+
+@media (orientation: landscape)
+	.orientation-message
+		visibility: hidden
+
+@media (orientation: portrait)
+	.orientation-message
+		visibility: visible
+
+
+a,
+button
+	cursor: pointer

@@ -1,7 +1,7 @@
 import { Context, Engine } from '.'
 
 
-export interface Plugin {
+export interface EnginePlugin {
 	engine: Engine
 	id: string
 
@@ -13,11 +13,7 @@ export interface Plugin {
 	error: (...data: any[]) => void
 
 
-	/** DO NOT USE THIS TO DRAW!
- * 
- * A context is only provided for getting the canvas size, not drawing. */
 	resize?: (ctx: Context) => void
-
 
 	draw?: (ctx: Context) => void
 

@@ -6,6 +6,8 @@ export function fill_canvas(canvas: HTMLCanvasElement, resized?: () => void) {
 		(entries, observer) => {
 			_fill_resize(canvas, entries[0])
 			if (resized) resized()
+			// setTimeout(() => {
+			// }, 100)
 		}
 	)
 	try {

@@ -10,9 +10,11 @@ export class RTCDriver extends Driver {
 	readonly _signal_driver: Driver
 
 
-	private peer?: RTCPeerConnection
-	private reliable_channel?: RTCDataChannel
-	private unreliable_channel?: RTCDataChannel
+	peer?: RTCPeerConnection
+	reliable_channel?: RTCDataChannel
+	unreliable_channel?: RTCDataChannel
+
+	pending_candidates: RTCIceCandidateInit[] = []
 
 
 	constructor() {
@@ -57,7 +59,7 @@ export class RTCDriver extends Driver {
 		})
 
 		// ----- Reliable Channel -----
-		this.reliable_channel = this.peer.createDataChannel('reliable', { negotiated: true, id: 1 })
+		this.reliable_channel = this.peer.createDataChannel('reliable', { negotiated: true, id: 1, ordered: true, })
 		this.reliable_channel.onopen = () => {
 			console.log('[RTC] reliable channel opened')
 			this.on_status_changed?.()
@@ -112,11 +114,13 @@ export class RTCDriver extends Driver {
 		this.peer.onconnectionstatechange = (ev) => {
 			console.log('[RTC] connect:', this.peer!.connectionState)
 			this.on_status_changed?.()
-			this.set_connection(this.peer?.connectionState || 'unknown')
 
 			switch (this.peer?.connectionState) {
 				case 'connected':
-					setTimeout(() => this.on_opened?.(), 2000)
+					setTimeout(() => {
+						this.set_connection(this.peer?.connectionState || 'unknown')
+						this.on_opened?.()
+					}, 2000)
 					break
 				case 'closed':
 					this.on_closed?.()
@@ -149,24 +153,35 @@ export class RTCDriver extends Driver {
 			// console.log('[RTC] Setting desc')
 			const desc = new RTCSessionDescription({ type: type as RTCSdpType, sdp })
 			this.peer!.setRemoteDescription(desc)
+
+			for (const candidate_obj of this.pending_candidates) {
+				console.log('[RTC] adding queued candidate')
+				this.peer!.addIceCandidate(candidate_obj)
+			}
 		}
 
 		this._signal_protocol.on_candidate = async (candidate, sdp_mid, sdp_index, ufrag) => {
-			console.log('[RTC] received candidate:', { candidate, sdp_mid, sdp_index })
+			console.log('[RTC] received candidate:', { candidate, sdp_mid, sdp_index, ufrag })
 
-			await new Promise<void>((resolve) => setTimeout(resolve, 2000))
-
-			this.peer!.addIceCandidate({
+			const candidate_obj: RTCIceCandidateInit = {
 				candidate: candidate,
 				sdpMid: sdp_mid,
 				sdpMLineIndex: sdp_index,
 				usernameFragment: ufrag,
-			})
+			}
+
+			if (this.peer?.remoteDescription) {
+				console.log('[RTC] adding candidate immediately')
+				this.peer!.addIceCandidate(candidate_obj)
+			}
+			else {
+				console.log('[RTC] adding candidate to queue')
+				this.pending_candidates.push(candidate_obj)
+			}
 		}
 
-		console.log('[RTC] creating offer')
 		const offer = await this.peer.createOffer()
-		console.log(offer)
+		console.log('[RTC] created offer:', offer)
 
 		console.log('[RTC] setting local description to offer')
 		await this.peer.setLocalDescription(offer)
@@ -178,6 +193,8 @@ export class RTCDriver extends Driver {
 
 	readonly disconnect = async (): Promise<void> => {
 		console.log('[RTC] disconnecting')
+		this._signal_driver.disconnect()
+
 		this.reliable_channel?.close()
 		this.unreliable_channel?.close()
 		this.peer?.close()

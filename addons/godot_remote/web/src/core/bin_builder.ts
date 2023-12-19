@@ -1,8 +1,6 @@
 import { BinView } from '.'
 
 
-
-
 export interface BinBuilder {
 	size: number
 	commands: ((view: BinView) => void)[]

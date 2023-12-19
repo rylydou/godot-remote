@@ -12,6 +12,8 @@ export interface MenuButtonOptions {
 
 
 export class MenuButton extends Widget {
+	callback?: () => void
+
 	cx: number
 	cy: number
 	r: number
@@ -23,11 +25,13 @@ export class MenuButton extends Widget {
 	private _is_active = false
 
 
-	constructor(remote: Remote, options: MenuButtonOptions) {
+	constructor(remote: Remote, callback: () => void | undefined, options: MenuButtonOptions) {
 		super(remote, '')
 
-		this.cx = options.cx
-		this.cy = options.cy
+		this.callback = callback
+
+		this.cx = options?.cx
+		this.cy = options?.cy
 		this.r = 2.0
 
 		this.icon = options.icon || 'none'
@@ -45,7 +49,6 @@ export class MenuButton extends Widget {
 
 		this._is_active = true
 		this._pid = pid
-		this.sync()
 		this.remote.queue_redraw()
 		return true
 	}
@@ -56,8 +59,11 @@ export class MenuButton extends Widget {
 		if (this._pid != pid) return
 
 		this._is_active = false
-		this.sync()
 		this.remote.queue_redraw()
+
+		if (this.is_inside(px, py)) {
+			this.callback?.()
+		}
 	}
 
 

@@ -34,15 +34,18 @@ func handle_packet(peer_id: int, data: Variant) -> void:
 		'input':
 			_handle_input_packet(peer_id, dict)
 		
+		'session':
+			var session_id = dict.get('sid')
+			if not(session_id is float): return
+			receive_session.emit(peer_id, session_id)
+		
 		'name':
 			var username = dict.get('name')
 			if not(username is String): return
 			receive_name.emit(peer_id, username)
 		
-		'session':
-			var session_id = dict.get('sid')
-			if not(session_id is float): return
-			receive_session.emit(peer_id, session_id)
+		'leave':
+			receive_leave.emit(peer_id)
 		
 		_: print('[JSON] unknown packet type from #',peer_id,': ',type)
 

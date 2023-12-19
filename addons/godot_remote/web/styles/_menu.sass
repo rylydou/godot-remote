@@ -1,0 +1,61 @@
+#menu
+	position: fixed
+	left: 0
+	top: 0
+	bottom: 0
+	
+	display: flex
+	flex-direction: column
+	width: 22rem
+	max-width: 100vw
+	overflow-y: scroll
+	overflow-x: hidden
+	max-height: 100%
+	
+	background-color: white
+	color: black
+	box-shadow: .25rem 0 black
+	
+	visibility: hidden
+	translate: -100% 0%
+	transition: translate 100ms linear, visibility 0ms 100ms
+	
+	body.menu-open &
+		visibility: visible
+		translate: 0% 0%
+		transition: translate 200ms ease-out
+	
+	>*
+		display: flex
+		flex-direction: row
+		justify-content: space-between
+		align-items: center
+		gap: 1rem
+		min-height: 2rem
+		padding: 1rem 2rem
+		rotate: -2deg
+		min-height: 4rem
+	
+	>:not(:last-child)
+		border-bottom: solid 1px lightgray
+	
+	>:first-child
+		margin-top: .5rem
+	
+	h1
+		font-size: 1.5rem
+		line-height: 2rem
+		
+		font-family: $font-display
+		font-weight: 900
+	
+	#menu-close
+		width: 2rem
+		height: 2rem
+	
+	>button
+		font-family: $font-display
+		font-weight: bold
+		
+		>:last-child
+			opacity: 0.5

@@ -1,4 +1,5 @@
 # Godot Remote
+
 Use your phone as a wireless gamepad in Godot. Similar to [jackbox.tv](https://jackbox.tv) but more realtime.
 
 > [!CAUTION]
@@ -6,13 +7,13 @@ Use your phone as a wireless gamepad in Godot. Similar to [jackbox.tv](https://j
 > 
 > Also note the following:
 > - Horrible and even misleading documentation.
-> - Last of real world testing... _I will get to that later._
-> - Lacks of vital security measures. **⟵ _( !!! )_**
+> - No real world testing... _I will get to that later._
+> - Lack of vital security measures. **⟵ _( !!! )_**
 
 
 ## Setup for Games
 
-> [!NOTE]  
+> [!NOTE]
 > The following may be out of date.
 
 - Install a mono version of Godot `4.2.X` (tested on `4.2.1`).
@@ -20,9 +21,9 @@ Use your phone as a wireless gamepad in Godot. Similar to [jackbox.tv](https://j
 
 ### Additional Setup for Development
 
-- The repository already contains compiled code for the web interface but if you want to develop for the web interface then follow these steps.
+- The repository already contains compiled code for the web interface. If you want to develop for it then follow these steps.
   - Open a terminal in `addons/godot_remote/web`.
-  - Run `pnpm i` to install dependencies.
+  - Run `pnpm i` to install dependencies. [Don't have PNPM?](https://pnpm.io)
   - Run `pnpm run watch` to watch and compile code.
 
 > [!TIP]
@@ -71,3 +72,8 @@ Currently this driver has not be implemented yet. At the moment I am having trou
 There are two kinds of fundamental types of [internet transport protocols](https://en.wikipedia.org/wiki/Internet_protocol_suite#Transport_layer): [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol) and [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol). You can count on [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol) packets (little messages) being sent to their destination but that reliability comes at a cost. On the opposite side of the coin there is [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol) which is very fast but that comes at the cost of reliability. You won't even know if your messages have been delivered! The downsides of UDP are almost irrelevant for the project because the controller in always sending information about the controler plus we can choose which of the two protocols we want to use, playing into each others' strengths and weaknesses.
 
 Unfortunately web browsers are really restrictive about what kinds of protocols they will let us use. The only two ways to send UDP (or UDP like) packets is either with [WebRTC](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API#webrtc_reference) or [WebTransport](https://developer.mozilla.org/en-US/docs/Web/API/WebTransport), [the latter of which is lacking support](https://caniuse.com/webtransport) in Safari, [a big deal for phones](https://news.ycombinator.com/item?id=25850091).
+
+
+## Credits
+- [kenyoni-software/godot-addons/qr-code](https://github.com/kenyoni-software/godot-addons#qr-code) (MIT)
+- [deep-entertainment/godottpd](https://github.com/deep-entertainment/godottpd) (MIT)

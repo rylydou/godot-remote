@@ -1,14 +1,14 @@
-import { Context, Plugin, } from '.'
+import { Context, EnginePlugin, } from '.'
 
 
 export class Engine {
 	readonly canvas: HTMLCanvasElement
 	readonly ctx: Context
 
-	plugins = new Map<string, Plugin>()
-	plugin_stack: string[] = []
+	readonly plugins: EnginePlugin[] = []
 
-	scale = 1.0
+
+	rem = 16.0
 
 
 	screen_log: string[] = []
@@ -17,20 +17,13 @@ export class Engine {
 	constructor(canvas: HTMLCanvasElement) {
 		this.canvas = canvas
 
-		let canvas_ctx = canvas.getContext('2d') as CanvasRenderingContext2D
-		// @ts-ignore
-		canvas_ctx.scale_factor = 1.0
-		// @ts-ignore
+		let canvas_ctx = canvas.getContext('2d') as Context
+		canvas_ctx.scale_factor = this.rem
 		canvas_ctx.w = 1.0
-		// @ts-ignore
 		canvas_ctx.h = 1.0
-		// @ts-ignore
 		this.ctx = canvas_ctx
 
 		canvas.addEventListener('pointerdown', (ev) => {
-			ev.preventDefault()
-		})
-		window.addEventListener('pointerdown', (ev) => {
 			ev.preventDefault()
 			this.pointer_down(ev)
 		})
@@ -48,8 +41,8 @@ export class Engine {
 	}
 
 
-	create_plugin(id: string): Plugin {
-		const plugin: Plugin = {
+	create_plugin(id: string): EnginePlugin {
+		const plugin: EnginePlugin = {
 			engine: this,
 			id: id,
 
@@ -60,15 +53,14 @@ export class Engine {
 			error: (data) => console.error(`[${id}] `, data),
 		}
 
-		this.plugins.set(id, plugin)
+		this.plugins.push(plugin)
 		return plugin
 	}
 
 
-	*plugin_stack_iter(): Generator<Plugin> {
-		for (const plugin_id of this.plugin_stack) {
-			const plugin = this.plugins.get(plugin_id)
-			if (!plugin) continue
+	*plugin_iter(): Generator<EnginePlugin> {
+		// return this.plugins
+		for (const plugin of this.plugins) {
 			yield plugin
 		}
 	}
@@ -76,8 +68,8 @@ export class Engine {
 
 	transform_event(event: { x: number, y: number }): [number, number] {
 		return [
-			event.x / this.scale,
-			event.y / this.scale,
+			event.x / this.rem,
+			event.y / this.rem,
 		]
 	}
 
@@ -99,21 +91,21 @@ export class Engine {
 		const ctx = this.ctx
 		ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
 
-		ctx.scale_factor = this.scale * window.devicePixelRatio
+		ctx.scale_factor = this.rem * window.devicePixelRatio
 		ctx.w = this.canvas.width / ctx.scale_factor
 		ctx.h = this.canvas.height / ctx.scale_factor
 
 		if (ctx.w != this._canvas_w || ctx.h != this._canvas_h) {
 			this._canvas_w = ctx.w
 			this._canvas_h = ctx.h
-			for (const plugin of this.plugin_stack_iter()) {
+			for (const plugin of this.plugin_iter()) {
 				plugin.resize?.(ctx)
 			}
 		}
 
 		ctx.save()
 		ctx.scale(ctx.scale_factor, ctx.scale_factor)
-		for (const plugin of this.plugin_stack_iter()) {
+		for (const plugin of this.plugin_iter()) {
 			ctx.save()
 			plugin.draw?.(ctx)
 			ctx.restore()
@@ -124,7 +116,7 @@ export class Engine {
 
 	pointer_down(event: PointerEvent): void {
 		const [px, py] = this.transform_event(event)
-		for (const plugin of this.plugin_stack_iter()) {
+		for (const plugin of this.plugin_iter()) {
 			if (!plugin.pointer_down) continue
 			const is_handled = plugin.pointer_down?.(event.pointerId, px, py)
 			if (is_handled) return
@@ -134,7 +126,7 @@ export class Engine {
 
 	pointer_move(event: PointerEvent): void {
 		const [px, py] = this.transform_event(event)
-		for (const plugin of this.plugin_stack_iter()) {
+		for (const plugin of this.plugin_iter()) {
 			plugin.pointer_move?.(event.pointerId, px, py)
 		}
 	}
@@ -142,7 +134,7 @@ export class Engine {
 
 	pointer_up(event: PointerEvent): void {
 		const [px, py] = this.transform_event(event)
-		for (const plugin of this.plugin_stack_iter()) {
+		for (const plugin of this.plugin_iter()) {
 			plugin.pointer_up?.(event.pointerId, px, py)
 		}
 	}

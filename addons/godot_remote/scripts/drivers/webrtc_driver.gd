@@ -120,6 +120,7 @@ func _create_peer() -> Peer:
 	peer.reliable_channel = peer.connection.create_data_channel('reliable', {
 		'negotiated': true,
 		'id': 1,
+		'ordered': true,
 	})
 	
 	peer.unreliable_channel = peer.connection.create_data_channel('unreliable', {

@@ -2,7 +2,6 @@ extends RefCounted
 
 
 const BtnInput = preload('res://addons/godot_remote/scripts/types/btn_input.gd')
-const AxisInput = preload('res://addons/godot_remote/scripts/types/axis_input.gd')
 const JoyInput = preload('res://addons/godot_remote/scripts/types/joy_input.gd')
 
 
@@ -71,12 +70,6 @@ func is_btn_down(id: Variant) -> bool:
 	var btn: BtnInput = get_input(id)
 	if not btn: return false
 	return btn.is_down
-
-
-func get_axis(id: Variant) -> float:
-	var axis: AxisInput = get_input(id)
-	if not axis: return 0.
-	return axis.value
 
 
 func get_joy(id: Variant) -> Vector2:

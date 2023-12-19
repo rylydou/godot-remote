@@ -2,7 +2,9 @@
 extends EditorPlugin
 
 
-const CONFIG := preload('res://addons/godot_remote/config.gd')
+const AUTOLOAD_NAME := 'Remote'
+
+
 const AUTOLOAD_PATH := 'res://addons/godot_remote/scenes/autoloads/remote.tscn'
 const GITHUB_RELEASES_LINK := 'https://github.com/rylydou/godot-remote/releases'
 const COMPAT_MAJOR := 4
@@ -28,8 +30,8 @@ func _enter_tree():
 		else:
 			printerr(txt)
 	
-	add_autoload_singleton(CONFIG.autoload_name, AUTOLOAD_PATH)
+	add_autoload_singleton(AUTOLOAD_NAME, AUTOLOAD_PATH)
 
 
 func _exit_tree():
-	remove_autoload_singleton(CONFIG.autoload_name)
+	remove_autoload_singleton(AUTOLOAD_NAME)

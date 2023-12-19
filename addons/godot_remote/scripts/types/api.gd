@@ -15,8 +15,9 @@ func get_time_msec() -> int:
 
 signal receive_ping(peer_id: int, timestamp: int)
 signal receive_pong(peer_id: int, timestamp: int)
-signal receive_name(peer_id: int, id: Variant, name: String)
 signal receive_session(peer_id: int, sid: int)
+signal receive_name(peer_id: int, id: Variant, name: String)
+signal receive_leave(peer_id: int)
 signal receive_layout_ready(peer_id: int, id: StringName)
 
 signal receive_input_btn(peer_id: int, id: Variant, down: bool)

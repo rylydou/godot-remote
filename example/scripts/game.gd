@@ -25,5 +25,5 @@ func _on_controller_added(session_id: int) -> void:
 
 
 func _on_controller_removed(session_id: int) -> void:
-	var player: ControllerViewer = active_players[session_id]
+	var player: Player = active_players[session_id]
 	world_node.remove_child(player)

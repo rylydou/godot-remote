@@ -1,0 +1,97 @@
+dialog
+	// background: white
+	// color: black
+	padding: 2rem
+	
+	display: flex
+	flex-direction: column
+	border-radius: 2rem
+	
+	&::backdrop
+		background: black
+	
+	&:not([open])
+		visibility: hidden
+	
+	form
+		display: contents
+	
+	h1
+		text-align: center
+		font-size: 3rem
+		line-height: 3rem
+		font-weight: bold
+	
+	p
+		text-align: center
+		padding-top: 1rem
+	
+	.hori
+		display: flex
+		justify-content: center
+		flex-wrap: wrap
+		gap: 1rem
+		padding-top: 2rem
+		padding-bottom: 2rem
+		
+		> *
+			rotate: -2deg
+	
+	button
+		border-radius: 1rem
+		background: white
+		color: black
+		width: fit-content
+		padding: 1rem 2rem
+		font-weight: bold
+		font-size: 1.5rem
+		line-height: 2rem
+		box-shadow: 0 0.5rem hsl(0 0% 75%)
+		translate: 0 -0.5rem
+		
+		&.red
+			background: #e6482e
+			box-shadow: 0 0.5rem #a93b3b
+		
+		&:active
+			box-shadow: none
+			translate: none
+	
+	input
+		min-width: 16rem
+		width: 0
+		flex-grow: 1
+		
+		padding: 1rem
+		border-radius: 1rem
+		border: solid .25rem white
+		
+		font-weight: bold
+		font-size: 1.5rem
+		line-height: 2rem
+		text-transform: uppercase
+		
+		background: black
+		
+		&::placeholder
+			text-transform: none
+			color: hsl(0 0% 50%)
+
+
+#orient-warn
+	z-index: 1000
+	position: fixed
+	inset: 0
+	background: black
+	color: white
+	font-weight: bold
+	font-size: 2rem
+	line-height: 3rem
+	text-align: center
+	padding: 2rem
+	display: grid
+	place-content: center
+	
+	> h1
+		background: white
+		color: black

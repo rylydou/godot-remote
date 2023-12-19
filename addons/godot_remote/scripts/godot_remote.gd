@@ -1,7 +1,6 @@
 class_name GodotRemote extends Node
 
 
-const CONFIG := preload('res://addons/godot_remote/config.gd')
 # Imports
 const Util = preload('res://addons/godot_remote/scripts/util.gd')
 const API = preload('res://addons/godot_remote/scripts/types/api.gd')
@@ -9,7 +8,6 @@ const Driver = preload('res://addons/godot_remote/scripts/types/driver.gd')
 const Client = preload('res://addons/godot_remote/scripts/types/client.gd')
 const Controller = preload('res://addons/godot_remote/scripts/types/controller.gd')
 const BtnInput = preload('res://addons/godot_remote/scripts/types/btn_input.gd')
-const AxisInput = preload('res://addons/godot_remote/scripts/types/axis_input.gd')
 const JoyInput = preload('res://addons/godot_remote/scripts/types/joy_input.gd')
 
 
@@ -31,6 +29,10 @@ signal controller_removed(session_id: int)
 @export var starting_port = 8080
 @export var max_port_retries = 10
 @export var input_handle_mode := InputHandleMode.Idle
+@export var name_regex := '(^\\w(\\.|\\-)\\s)|\\s{2,}|^\\s+|\\s+$|(\\.|\\-){2,}|^(\\.|\\-)|(\\.|\\-)$'
+@export var max_name_length := 10
+@onready var _name_regex := RegEx.create_from_string(name_regex)
+
 
 @export_group('HTTP Server', 'http_')
 @export var http_server: HttpServer
@@ -91,8 +93,9 @@ func _connect_signals() -> void:
 	api.receive_pong.connect(_on_receive_pong)
 	api.receive_input_btn.connect(_on_receive_input_btn)
 	api.receive_input_joy.connect(_on_receive_input_joy)
-	api.receive_name.connect(_on_receive_name)
 	api.receive_session.connect(_on_receive_session)
+	api.receive_name.connect(_on_receive_name)
+	api.receive_leave.connect(_on_receive_leave)
 	api.receive_layout_ready.connect(_on_receive_layout_ready)
 
 
@@ -211,19 +214,23 @@ func add_controller(session_id: int) -> Controller:
 
 
 func remove_controller(session_id: int) -> void:
-	assert(_controllers.has(session_id), str('[Remote] Cannot remove controller. A controller with session id #',session_id,' does not exist.'))
-
+	if not _controllers.has(session_id): return
+	
 	controller_removed.emit(session_id)
 	_controllers.erase(session_id)
 
 
 func remove_idle_controllers() -> void:
 	var to_remove: Array[int] = []
+	
 	for session_id in _controllers:
-		var controller: Controller = _controllers[session_id]
+		var controller := get_controller(session_id)
+		if not controller: continue
 		if controller.is_peer_connected: continue
 		if controller.peer_id != 0: continue
+		
 		to_remove.append(session_id)
+	
 	for session_id in to_remove:
 		remove_controller(session_id)
 
@@ -231,21 +238,27 @@ func remove_idle_controllers() -> void:
 ## Returns true of the controller was transferred from another client
 func assign_client_to_controller(peer_id: int, session_id: int) -> void:
 	var controller := get_controller(session_id)
-	assert(controller, str('[Remote] Cannot assign controller to client. A controller with session id #',session_id,' does not exist.'))
-
+	if not controller:
+		printerr('[Remote] Cannot assign controller to client. A controller with session id #',session_id,' does not exist.')
+		return
+	
 	var old_peer_id := controller.peer_id
-
+	
 	if controller.is_peer_connected:
 		controller.is_peer_connected = false
 		controller.connection_changed.emit(false)
-
+		
 		if old_peer_id > 1:
-			var old_client: Client = _clients[old_peer_id]
+			var old_client := get_client(old_peer_id)
+			if not old_client: return
+			
 			old_client.is_assigned = false
 			old_client.assignment_changed.emit(false)
 			kick_client(old_peer_id, 'Someone took over this controller you were using.')
 	
-	var new_client: Client = _clients[peer_id]
+	var new_client := get_client(peer_id)
+	if not new_client: return
+	
 	new_client.session_id = session_id
 	new_client.is_assigned = true
 	controller.is_peer_connected = true
@@ -261,11 +274,13 @@ func _on_client_connected(peer_id: int) -> void:
 
 
 func _on_client_disconnected(peer_id: int) -> void:
-	var client: Client = _clients[peer_id]
+	var client := get_client(peer_id)
+	if not client: return
 	_clients.erase(peer_id)
 	
-	if not client.is_assigned: return
-	var controller: Controller = _controllers[client.session_id]
+	var controller := get_controller(client.session_id)
+	if not controller: return
+	
 	controller.peer_id = 0
 	controller.is_peer_connected = false
 	controller.connection_changed.emit(false)
@@ -274,6 +289,8 @@ func _on_client_disconnected(peer_id: int) -> void:
 
 func ping_client(peer_id: int) -> void:
 	var client := get_client(peer_id)
+	if not client: return
+	
 	client.ongoing_pings += 1
 	api.send_ping(peer_id, api.get_time_msec())
 
@@ -287,6 +304,7 @@ func _on_receive_pong(peer_id: int, sts: int) -> void:
 	var timestamp := api.get_time_msec()
 	var ping_ms = timestamp - sts
 	var client := get_client(peer_id)
+	if not client: return
 	
 	client.last_ping_ms = ping_ms
 	client.ping_sum += ping_ms
@@ -297,7 +315,9 @@ func _on_receive_pong(peer_id: int, sts: int) -> void:
 
 
 func _on_receive_input_btn(peer_id: int, id: Variant, is_down: bool) -> void:
-	if get_client(peer_id).session_id == 0: return
+	var client := get_client(peer_id)
+	if not client: return
+	if client.session_id == 0: return
 	
 	var btn: BtnInput = get_input_by_peer(peer_id, id)
 	btn.is_down = is_down
@@ -308,28 +328,47 @@ func _on_receive_input_btn(peer_id: int, id: Variant, is_down: bool) -> void:
 
 
 func _on_receive_input_joy(peer_id: int, id: Variant, x: float, y: float, t: int) -> void:
-	if get_client(peer_id).session_id == 0: return
+	var client := get_client(peer_id)
+	if not client: return
+	if client.session_id == 0: return
+	
 	var joy: JoyInput = get_input_by_peer(peer_id, id)
 	if joy.t > t: return
 	joy.t = t
 	joy.position = Vector2(x, y)
 
 
-func _on_receive_name(peer_id: int, username: String) -> void:
-	var client: Client = _clients[peer_id]
-	if not client.is_assigned: return
-	
-	var controller := get_controller(client.sid)
-	controller.username = username
-	controller.username_changed.emit(username)
-
-
 func _on_receive_session(peer_id: int, session_id: int) -> void:
+	var client := get_client(peer_id)
+	if not client: return
+	
 	if not _controllers.has(session_id):
 		print('[Remote] Adding a new controller for new client.')
 		add_controller(session_id)
 	
 	assign_client_to_controller(peer_id, session_id)
+
+
+func _on_receive_name(peer_id: int, username: String) -> void:
+	var client := get_client(peer_id)
+	if not client: return
+	if not client.is_assigned: return
+	
+	username = Util.filter_name(username)
+	if username.length() <= 0: return
+	
+	var controller := get_controller(client.session_id)
+	if not controller: return
+	controller.username = username
+	controller.username_changed.emit(username)
+
+
+func _on_receive_leave(peer_id: int) -> void:
+	var client := get_client(peer_id)
+	if not client: return
+	if not client.is_assigned: return
+	remove_controller(client.session_id)
+	kick_client(peer_id, 'left')
 
 
 func _on_receive_layout_ready(peer_id: int, id: StringName) -> void:

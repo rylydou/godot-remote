@@ -1,26 +1,32 @@
-* {
+*:not(dialog) {
   box-sizing: border-box;
   margin: unset;
   padding: unset;
+}
+
+* {
+  touch-action: none;
   border: unset;
   background: unset;
   color: unset;
   font: unset;
   text-align: unset;
+  outline: none;
 }
 
 html,
 body {
   user-select: none;
+  -webkit-user-select: none;
   max-width: 100dvw;
   max-height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
   font-size: 1rem;
   line-height: 1.5rem;
+  font-family: "Bespoke Sans", sans-serif;
   background-color: black;
   color: white;
-  font-family: "Bespoke Sans", sans-serif;
 }
 
 canvas {
@@ -31,29 +37,32 @@ canvas {
   transition: filter 100ms;
 }
 
-canvas.open {
+body.menu-open canvas {
   filter: opacity(0.25) blur(8px);
   transition: filter 200ms;
 }
 
 #menu {
   position: fixed;
-  inset: 0;
-  right: 50%;
+  left: 0;
+  top: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
-  min-width: min(100vh, 100vw);
+  width: 22rem;
   max-width: 100vw;
   overflow-y: scroll;
-  overflow-x: none;
+  overflow-x: hidden;
+  max-height: 100%;
   background-color: white;
   color: black;
+  box-shadow: 0.25rem 0 black;
   visibility: hidden;
   translate: -100% 0%;
   transition: translate 100ms linear, visibility 0ms 100ms;
 }
 
-#menu.open {
+body.menu-open #menu {
   visibility: visible;
   translate: 0% 0%;
   transition: translate 200ms ease-out;
@@ -61,15 +70,22 @@ canvas.open {
 
 #menu > * {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
-  align-items: left;
+  align-items: center;
   gap: 1rem;
   min-height: 2rem;
   padding: 1rem 2rem;
+  rotate: -2deg;
+  min-height: 4rem;
 }
 
 #menu > :not(:last-child) {
   border-bottom: solid 1px lightgray;
+}
+
+#menu > :first-child {
+  margin-top: 0.5rem;
 }
 
 #menu h1 {
@@ -85,13 +101,248 @@ canvas.open {
 }
 
 #menu > button {
-  cursor: pointer;
   font-family: "Bespoke Sans", sans-serif;
   font-weight: bold;
 }
 
 #menu > button > :last-child {
   opacity: 0.5;
-  font-family: sans-serif;
-  font-weight: normal;
+}
+
+dialog {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  border-radius: 2rem;
+}
+
+dialog::backdrop {
+  background: black;
+}
+
+dialog:not([open]) {
+  visibility: hidden;
+}
+
+dialog form {
+  display: contents;
+}
+
+dialog h1 {
+  text-align: center;
+  font-size: 3rem;
+  line-height: 3rem;
+  font-weight: bold;
+}
+
+dialog p {
+  text-align: center;
+  padding-top: 1rem;
+}
+
+dialog .hori {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+dialog .hori > * {
+  rotate: -2deg;
+}
+
+dialog button {
+  border-radius: 1rem;
+  background: white;
+  color: black;
+  width: fit-content;
+  padding: 1rem 2rem;
+  font-weight: bold;
+  font-size: 1.5rem;
+  line-height: 2rem;
+  box-shadow: 0 0.5rem hsl(0, 0%, 75%);
+  translate: 0 -0.5rem;
+}
+
+dialog button.red {
+  background: #e6482e;
+  box-shadow: 0 0.5rem #a93b3b;
+}
+
+dialog button:active {
+  box-shadow: none;
+  translate: none;
+}
+
+dialog input {
+  min-width: 16rem;
+  width: 0;
+  flex-grow: 1;
+  padding: 1rem;
+  border-radius: 1rem;
+  border: solid 0.25rem white;
+  font-weight: bold;
+  font-size: 1.5rem;
+  line-height: 2rem;
+  text-transform: uppercase;
+  background: black;
+}
+
+dialog input::placeholder {
+  text-transform: none;
+  color: hsl(0, 0%, 50%);
+}
+
+#orient-warn {
+  z-index: 1000;
+  position: fixed;
+  inset: 0;
+  background: black;
+  color: white;
+  font-weight: bold;
+  font-size: 2rem;
+  line-height: 3rem;
+  text-align: center;
+  padding: 2rem;
+  display: grid;
+  place-content: center;
+}
+
+#orient-warn > h1 {
+  background: white;
+  color: black;
+}
+
+@keyframes pulse {
+  0% {
+    inset: 3rem;
+    opacity: 0;
+  }
+  5% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    inset: -1rem;
+    opacity: 0;
+  }
+}
+
+@keyframes spin {
+  0% {
+    rotate: -5deg;
+  }
+  33% {
+    rotate: 0turn;
+  }
+  100% {
+    rotate: 2.9861111111turn;
+  }
+}
+
+#spinner {
+  pointer-events: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: 6rem;
+  height: 6rem;
+  border-radius: 100%;
+  mix-blend-mode: difference;
+}
+
+#spinner::before, #spinner::after {
+  content: "";
+  box-sizing: border-box;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  border-radius: 100%;
+  border: solid 4px white;
+  animation: pulse 1.2s ease-out infinite;
+}
+
+#spinner::after {
+  animation-delay: 0.3s;
+}
+
+#spinner > span {
+  position: absolute;
+  bottom: -1rem;
+  left: 50%;
+  translate: -50% 0;
+  font-weight: bold;
+}
+
+#spinner > svg {
+  z-index: 1;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  rotate: -5deg;
+  animation: spin 1.2s ease-in-out infinite;
+}
+
+#reload {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  translate: -50% 0;
+  font-weight: bold;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  width: max-content;
+  padding: 1rem 2rem;
+  color: black;
+  background: white;
+  box-shadow: 0 0.5rem hsl(0, 0%, 75%);
+  border-radius: 1rem;
+}
+
+#reload:active {
+  box-shadow: none;
+  translate: -50% 0.5rem;
+}
+
+.orientation-message {
+  z-index: 9001;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 3rem;
+  background: black;
+  color: white;
+}
+
+.orientation-message h1 {
+  font-weight: bold;
+  font-size: 2rem;
+  line-height: 3rem;
+  rotate: -5deg;
+}
+
+@media (orientation: landscape) {
+  .orientation-message {
+    visibility: hidden;
+  }
+}
+
+@media (orientation: portrait) {
+  .orientation-message {
+    visibility: visible;
+  }
+}
+
+a,
+button {
+  cursor: pointer;
 }

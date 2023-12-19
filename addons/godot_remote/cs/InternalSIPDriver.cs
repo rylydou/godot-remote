@@ -4,7 +4,6 @@ using SIPSorcery.Net;
 using Dict = Godot.Collections.Dictionary;
 using Array = Godot.Collections.Array;
 using System.Net;
-using System;
 
 
 public partial class InternalSIPDriver : RefCounted
@@ -47,6 +46,7 @@ public partial class InternalSIPDriver : RefCounted
 	[Signal] public delegate void client_connectedEventHandler(int peer_id);
 	[Signal] public delegate void client_disconnectedEventHandler(int peer_id);
 
+
 	void _send_json(int peer_id, Dict message)
 	{
 		GD.Print(Json.Stringify(message));
@@ -56,6 +56,8 @@ public partial class InternalSIPDriver : RefCounted
 
 	public async void signaling_peer_connected(int peer_id)
 	{
+		if (peers.ContainsKey(peer_id)) return;
+
 		var peer = new Peer();
 		peers.Add(peer_id, peer);
 
@@ -177,6 +179,7 @@ public partial class InternalSIPDriver : RefCounted
 		{
 			GD.Print("[SIP] Reliable Closed.");
 			EmitSignal(SignalName.client_disconnected, peer_id);
+			disconnect_peer(peer_id, "Closed");
 		};
 		peer.reliable_channel.onmessage += (channel, protocol, data) =>
 		{
@@ -216,12 +219,7 @@ public partial class InternalSIPDriver : RefCounted
 
 	public void signaling_peer_disconnected(int peer_id)
 	{
-		var peer = peers[peer_id];
-		peers.Remove(peer_id);
-
-		peer.reliable_channel.close();
-		peer.unreliable_channel.close();
-		peer.connection.close();
+		disconnect_peer(peer_id, "Disconnected from signaling");
 	}
 
 
@@ -229,6 +227,7 @@ public partial class InternalSIPDriver : RefCounted
 	{
 		GD.Print("[SIP] Received Description: type=", type, " sdp=", sdp);
 
+		if (!peers.ContainsKey(peer_id)) return;
 		var peer = peers[peer_id];
 
 		var int_type = type switch
@@ -258,6 +257,7 @@ public partial class InternalSIPDriver : RefCounted
 	{
 		GD.Print("[SIP] Received Candidate: mid=", sdp_mid, " index=", sdp_mid, " candidate=", candidate);
 
+		if (!peers.ContainsKey(peer_id)) return;
 		var peer = peers[peer_id];
 
 		peer.connection.addIceCandidate(new()
@@ -296,6 +296,7 @@ public partial class InternalSIPDriver : RefCounted
 
 	public Error send_reliable(int peer_id, Variant message)
 	{
+		if (!peers.ContainsKey(peer_id)) return Error.DoesNotExist;
 		var peer = peers[peer_id];
 		return send_channel(peer.reliable_channel, message);
 	}
@@ -303,6 +304,7 @@ public partial class InternalSIPDriver : RefCounted
 
 	public Error send_unreliable(int peer_id, Variant message)
 	{
+		if (!peers.ContainsKey(peer_id)) return Error.DoesNotExist;
 		var peer = peers[peer_id];
 		return send_channel(peer.unreliable_channel, message);
 	}
@@ -310,6 +312,7 @@ public partial class InternalSIPDriver : RefCounted
 
 	public void disconnect_peer(int peer_id, string reason = "")
 	{
+		if (!peers.ContainsKey(peer_id)) return;
 		var peer = peers[peer_id];
 		peers.Remove(peer_id);
 

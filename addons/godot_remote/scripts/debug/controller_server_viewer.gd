@@ -16,7 +16,6 @@ func _ready() -> void:
 func _on_controller_added(session_id: int) -> void:
 	var controller_view: ControllerViewer = controller_view_scene.instantiate()
 	controller_view.session_id = session_id
-	controller_view.remote = Remote
 	add_child(controller_view)
 	active_viewers[session_id] = controller_view
 

@@ -8,7 +8,6 @@
 	<title>Controller</title>
 
 	<link href="https://api.fontshare.com/v2/css?f[]=bespoke-sans@1&display=swap" rel="stylesheet">
-
   <script type="module" crossorigin src="/index.js"></script>
   <link rel="stylesheet" crossorigin href="/index.css">
 </head>
@@ -17,21 +16,68 @@
 	<div style="width: 100%; height: 100%; min-height: 100dvh;">
 		<canvas id="canvas"></canvas>
 	</div>
+
+	<div id="spinner">
+		<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+			<rect x="3" y="5" width="10" height="5" rx="1" fill="white" />
+			<path d="M4 8V7H5V6H6V7H7V8H6V9H5V8H4Z" fill="black" />
+			<circle cx="9.5" cy="7.5" r="0.5" fill="black" />
+			<circle cx="10.5" cy="6.5" r="0.5" fill="black" />
+			<circle cx="10.5" cy="8.5" r="0.5" fill="black" />
+			<circle cx="11.5" cy="7.5" r="0.5" fill="black" />
+		</svg>
+		<span>Connecting</span>
+	</div>
+
+	<button id="reload" onclick="window.location.reload()" style="visibility: hidden;">
+		<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+			<path
+				d="M8 16C5.76667 16 3.875 15.225 2.325 13.675C0.775 12.125 0 10.2333 0 8C0 5.76667 0.775 3.875 2.325 2.325C3.875 0.775 5.76667 0 8 0C9.15 0 10.25 0.2375 11.3 0.7125C12.35 1.1875 13.25 1.86667 14 2.75V0H16V7H9V5H13.2C12.6667 4.06667 11.9375 3.33333 11.0125 2.8C10.0875 2.26667 9.08333 2 8 2C6.33333 2 4.91667 2.58333 3.75 3.75C2.58333 4.91667 2 6.33333 2 8C2 9.66667 2.58333 11.0833 3.75 12.25C4.91667 13.4167 6.33333 14 8 14C9.28333 14 10.4417 13.6333 11.475 12.9C12.5083 12.1667 13.2333 11.2 13.65 10H15.75C15.2833 11.7667 14.3333 13.2083 12.9 14.325C11.4667 15.4417 9.83333 16 8 16Z"
+				fill="currentColor" />
+		</svg>
+		<span>Connection Lost</span>
+	</button>
+
 	<div id="menu">
 		<div>
 			<h1>Menu</h1>
-			<button id="menu-close">
+			<button onclick="remote_close_menu()">
 				<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
 					<path fill="currentColor"
 						d="M6.4 19L5 17.6l5.6-5.6L5 6.4L6.4 5l5.6 5.6L17.6 5L19 6.4L13.4 12l5.6 5.6l-1.4 1.4l-5.6-5.6L6.4 19Z" />
 				</svg>
 			</button>
 		</div>
-		<button><span>Change name</span><span>Unnamed</span></button>
-		<button><span>Takeover controller</span><span id="menu_session_id"></span></button>
-		<button><span>Disconnect</span><span id="menu-status"></span></button>
-		<button>Debug menu</button>
+		<button onclick="remote_open_name_dialog()"><span>Change name</span><span id="name">(unnamed)</span></button>
+		<button onclick="remote_open_leave_dialog()">Leave</button>
 	</div>
+
+	<dialog id="name-dialog">
+		<form method="dialog">
+			<h1>What's your name?</h1>
+			<div class="hori">
+				<input type="text" id="name-input" autocomplete="given-name" placeholder="Your name here" maxlength="10"
+					spellcheck="false">
+				<button>Submit!</button>
+			</div>
+		</form>
+	</dialog>
+
+	<dialog id="leave-dialog">
+		<form method="dialog">
+			<h1>Are you sure?</h1>
+			<p>(You will be missed)</p>
+			<div class="hori">
+				<button>Keep playing</button>
+				<button onclick="remote_leave()" class="red">Leave</button>
+			</div>
+		</form>
+	</dialog>
+
+	<div class="orientation-message">
+		<h1>Hold your phone on its side.</h1>
+	</div>
+
 </body>
 
 </html>

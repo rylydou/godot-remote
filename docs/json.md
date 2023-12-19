@@ -20,8 +20,9 @@
 | `ping`         | [Timestamp `t: uint`]                                                   |
 | `pong`         | [Timestamp `t: uint`]                                                   |
 | `session`      | [Session ID `sid: uint`]                                                |
-| `layout_ready` | [Layout ID `id: ref`]                                                   |
 | `name`         | [New name `name: str`]                                                  |
+| `leave`        |                                                                         |
+| `layout_ready` | [Layout ID `id: ref`]                                                   |
 
 
 ## 📱🕹️ Input packets

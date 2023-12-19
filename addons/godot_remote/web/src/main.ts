@@ -1,28 +1,23 @@
 import { fill_canvas } from './core'
-import { Debug, Remote } from './remote'
-import { Controls, Ping } from './remote/plugins'
+import { Config, Remote } from './remote'
+import * as plugin from './remote/plugins'
+
+// import './extras/orient'
+
+const canvas = document.getElementById('canvas') as HTMLCanvasElement
 
 
-async function main() {
-	const canvas = document.getElementById('canvas') as HTMLCanvasElement
-	if (!canvas) throw new Error('#canvas element was not found in the page.')
-
-	const engine = new Remote(canvas)
-	engine.scale = 16.0
-	engine.plugin_stack = [
-		'Controls',
-		'Ping',
-		'Debug',
-	]
-
-	const debug = new Debug(engine.create_plugin('Debug'))
-	const ping = new Ping(engine.create_plugin('Ping'))
-	const controls = new Controls(engine.create_plugin('Controls'))
-
-	fill_canvas(canvas, () => engine.queue_redraw())
-	engine.queue_redraw()
-	engine.connect()
-}
+// ----- Engine Init -----
+const engine = new Remote(canvas)
+plugin.debug(engine.create_plugin('debug'))
+plugin.leave(engine.create_plugin('leave')) // }- Dialog together strong!
+plugin.name(engine.create_plugin('name'))   // }
+plugin.menu(engine.create_plugin('menu'))   // }
+plugin.toasts(engine.create_plugin('toasts'))
+plugin.ping(engine.create_plugin('ping'))
+plugin.controls(engine.create_plugin('controls'))
 
 
-main()
+fill_canvas(canvas, () => engine.queue_redraw())
+engine.queue_redraw()
+engine.connect()

@@ -64,6 +64,13 @@ export class JSONProtocol extends RemoteProtocol {
 		})
 	}
 
+	override session(sid: number): any {
+		return JSON.stringify({
+			_: 'session',
+			sid,
+		})
+	}
+
 	override name(name: string): any {
 		return JSON.stringify({
 			_: 'name',
@@ -71,10 +78,9 @@ export class JSONProtocol extends RemoteProtocol {
 		})
 	}
 
-	override session(sid: number): any {
+	override leave(): any {
 		return JSON.stringify({
-			_: 'session',
-			sid,
+			_: 'leave',
 		})
 	}
 
